@@ -1,0 +1,51 @@
+# How the staged application (release/app, made by scripts/package.mjs) becomes an installer.
+appId: com.thornthunder.radiobench
+productName: RadioBench
+copyright: Copyright © 2026 thornthunder. GNU GPL v3.
+directories:
+  output: ../dist
+  buildResources: build
+# The Electron that npm installed for development, laid out by scripts/package.mjs, rather
+# than a second download of the same.
+electronDist: ../electron
+# Native modules, worker threads and the SDL and FT4222 libraries all want real files on disk.
+asar: false
+# The native modules are N-API builds that load in Electron as they are; rebuilding them for
+# Electron would need their sources and SDL's headers.
+npmRebuild: false
+nodeGypRebuild: false
+buildDependenciesFromSource: false
+files:
+  - package.json
+  - LICENSE
+  - apps/**/*
+  - node_modules/**/*
+  - '!**/*.map'
+  - '!**/*.md'
+  - '!**/*.ts'
+  - '!**/LICENSE*'
+  - '!**/test/**'
+  - '!**/tests/**'
+  - '!**/*.test.js'
+  # koffi's binary is in its platform package, @koromix/koffi-win32-x64. Its loader lives among
+  # its C++ sources (src/koffi/src/static.js), so only the documentation and headers go.
+  - '!node_modules/koffi/{doc,vendor}/**'
+  - '!node_modules/@serialport/bindings-cpp/prebuilds/!(win32-x64)/**'
+  - '!node_modules/@kmamal/sdl/{scripts,src/native,binding.gyp}/**'
+win:
+  target:
+    - target: nsis
+      arch: [x64]
+  icon: build/icon.png
+  artifactName: ${productName}-Setup-${version}.${ext}
+nsis:
+  oneClick: true
+  perMachine: false
+  allowElevation: false
+  deleteAppDataOnUninstall: false
+  shortcutName: RadioBench
+publish:
+  provider: github
+  owner: thornthunder
+  repo: RadioBench
+  releaseType: release

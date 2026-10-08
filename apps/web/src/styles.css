@@ -1,0 +1,1539 @@
+:root {
+  color-scheme: dark;
+  --text: #eef0f4;
+  --muted: #9aa1ad;
+  --amber: #ffb81c;
+  --lamp: #ff9d1c;
+  --red: #ff4d4d;
+  --green: #35c46a;
+  --blue: #8fb4ff;
+  font-family: system-ui, 'Segoe UI', sans-serif;
+  font-size: 16px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: #101114;
+  color: var(--text);
+}
+
+.bench {
+  display: grid;
+  justify-items: center;
+  padding: 1.25rem 0.75rem 2rem;
+}
+
+/* The radio's front: keys down the left, the display, and the keys, knobs and dial. */
+.rig {
+  width: min(100%, 94rem);
+  display: grid;
+  grid-template-columns: 5.5rem minmax(0, 1.3fr) minmax(0, 1fr);
+  grid-template-areas:
+    'brand brand brand'
+    'left lcd right';
+  gap: 0.8rem 1.1rem;
+  padding: 0.8rem 1.2rem 1.4rem;
+  border: 1px solid #45484e;
+  border-radius: 1.1rem;
+  background: linear-gradient(#35383d, #232528);
+  box-shadow:
+    0 1.2rem 2.5rem rgba(0, 0, 0, 0.6),
+    inset 0 1px 0 rgba(255, 255, 255, 0.12);
+}
+
+.rig-brand {
+  grid-area: brand;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.25rem 1rem;
+  color: var(--muted);
+  font-size: 0.72rem;
+  letter-spacing: 0.14em;
+}
+
+.rig-brand b {
+  color: var(--text);
+  font-size: 1.05rem;
+  font-style: italic;
+  letter-spacing: 0.06em;
+}
+
+.link {
+  margin-left: auto;
+  letter-spacing: 0.02em;
+}
+
+.link::before {
+  content: '';
+  display: inline-block;
+  width: 0.5rem;
+  height: 0.5rem;
+  margin-right: 0.4rem;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.link-up {
+  color: var(--green);
+}
+
+.link-down {
+  color: var(--red);
+}
+
+/* Keys */
+
+.key {
+  position: relative;
+  min-height: 2.1rem;
+  padding: 0.2rem 0.3rem;
+  border: 1px solid #0c0d0f;
+  border-radius: 0.35rem;
+  background: linear-gradient(#585c63, #393c41);
+  color: var(--text);
+  font:
+    600 0.68rem/1.1 system-ui,
+    'Segoe UI',
+    sans-serif;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+  cursor: pointer;
+  user-select: none;
+  touch-action: manipulation;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.2),
+    0 2px 3px rgba(0, 0, 0, 0.5);
+}
+
+.key:active:not(:disabled) {
+  transform: translateY(1px);
+  background: linear-gradient(#45484e, #33363a);
+}
+
+.key:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.key-lit,
+.key-orange {
+  border-color: var(--lamp);
+  color: #ffc56b;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.2),
+    0 0 0.6rem rgba(255, 157, 28, 0.7);
+}
+
+.key-red {
+  border-color: var(--red);
+  color: #ff8a8a;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.2),
+    0 0 0.7rem rgba(255, 77, 77, 0.8);
+}
+
+.key-green {
+  border-color: var(--green);
+  color: #7fe3a4;
+}
+
+.key:focus-visible,
+.knob-body:focus-visible {
+  outline: 2px solid var(--amber);
+  outline-offset: 2px;
+}
+
+.left-keys {
+  grid-area: left;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.key-pair {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.2rem;
+}
+
+.jack {
+  display: grid;
+  place-items: center;
+  margin: 0.4rem auto 0;
+  width: 3.4rem;
+  aspect-ratio: 1;
+  border: 0.35rem solid #1a1b1e;
+  border-radius: 50%;
+  background: radial-gradient(#0a0a0b 35%, #3a3d42 37%, #26282c 70%);
+  color: var(--muted);
+  font-size: 0.5rem;
+  letter-spacing: 0.08em;
+  white-space: nowrap;
+}
+
+.jack-mic {
+  border-radius: 0.5rem;
+}
+
+.right-panel {
+  grid-area: right;
+  display: grid;
+  align-content: start;
+  gap: 0.55rem;
+}
+
+.key-row {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 0.45rem;
+}
+
+.key-row-top .key {
+  min-height: 1.7rem;
+  border-radius: 0.6rem 0.6rem 0.3rem 0.3rem;
+}
+
+.controls-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  grid-template-areas:
+    'func dnr led nar rf'
+    'func dial dial dial rf'
+    'step dial dial dial af'
+    'step dial dial dial af'
+    'reset dial dial dial fine';
+  gap: 0.5rem 0.45rem;
+  align-items: center;
+  justify-items: center;
+  margin-top: 0.3rem;
+}
+
+.controls-grid .key {
+  width: 100%;
+}
+
+.at-func {
+  grid-area: func;
+}
+.at-dnr {
+  grid-area: dnr;
+  width: 100%;
+}
+.at-led {
+  grid-area: led;
+  display: grid;
+  justify-items: center;
+  gap: 0.2rem;
+  color: var(--muted);
+  font-size: 0.55rem;
+  letter-spacing: 0.08em;
+}
+.at-nar {
+  grid-area: nar;
+  width: 100%;
+}
+.at-rf {
+  grid-area: rf;
+}
+.at-dial {
+  grid-area: dial;
+  width: 100%;
+  padding: 0.4rem;
+}
+.at-step {
+  grid-area: step;
+}
+.at-af {
+  grid-area: af;
+}
+.at-reset {
+  grid-area: reset;
+  width: 100%;
+}
+.at-fine {
+  grid-area: fine;
+  width: 100%;
+}
+
+.busy-tx {
+  width: 1.8rem;
+  height: 0.5rem;
+  border-radius: 0.25rem;
+  background: #3a3d42;
+}
+
+.busy-tx-tx {
+  background: var(--red);
+  box-shadow: 0 0 0.6rem var(--red);
+}
+
+.busy-tx-busy {
+  background: var(--green);
+  box-shadow: 0 0 0.6rem var(--green);
+}
+
+/* Knobs */
+
+.knob {
+  display: grid;
+  justify-items: center;
+  gap: 0.2rem;
+  color: #c9ced8;
+  font-size: 0.62rem;
+  letter-spacing: 0.04em;
+  text-align: center;
+  user-select: none;
+}
+
+.knob-body {
+  width: 3.5rem;
+  aspect-ratio: 1;
+  border: 1px solid #0c0d0f;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 28%, #70747b, #2b2d31 72%);
+  box-shadow:
+    0 3px 6px rgba(0, 0, 0, 0.6),
+    inset 0 1px 1px rgba(255, 255, 255, 0.25);
+  cursor: grab;
+  touch-action: none;
+}
+
+.knob-body:active {
+  cursor: grabbing;
+}
+
+.knob-disabled .knob-body {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.knob-cap {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+}
+
+.knob-mark {
+  position: absolute;
+  left: 50%;
+  top: 7%;
+  width: 0.2rem;
+  height: 24%;
+  margin-left: -0.1rem;
+  border-radius: 0.1rem;
+  background: var(--text);
+}
+
+.knob-dial {
+  width: 100%;
+}
+
+.knob-dial .knob-body {
+  width: min(100%, 15rem);
+  background: radial-gradient(circle at 38% 30%, #5d6168, #1f2023 75%);
+  transition: box-shadow 0.3s;
+}
+
+/* The main dial's finger dimple. */
+.knob-dial .knob-mark {
+  top: 64%;
+  width: 24%;
+  height: 24%;
+  margin-left: -12%;
+  border-radius: 50%;
+  background: radial-gradient(circle at 40% 35%, #141517, #3a3d42);
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.8);
+}
+
+.knob-label b {
+  padding: 0 0.2rem;
+  border: 1px solid currentColor;
+  border-radius: 0.2rem;
+  font-weight: 600;
+}
+
+.knob-readout {
+  min-height: 1em;
+  color: #ffc56b;
+  font-variant-numeric: tabular-nums;
+}
+
+.lamp {
+  display: inline-block;
+  width: 0.45rem;
+  height: 0.45rem;
+  margin-right: 0.3rem;
+  border-radius: 50%;
+  background: #3a3d42;
+}
+
+.lamp-on {
+  background: var(--lamp);
+  box-shadow: 0 0 0.4rem var(--lamp);
+}
+
+/* The display. Everything inside is sized in em of .lcd-inner, which scales with the screen. */
+
+.lcd {
+  grid-area: lcd;
+  align-self: start;
+  position: relative;
+  aspect-ratio: 480 / 272;
+  container-type: size;
+  overflow: hidden;
+  border: 0.4rem solid #08090a;
+  border-radius: 0.5rem;
+  background: #000;
+}
+
+.lcd-inner {
+  position: relative;
+  display: grid;
+  grid-template-rows: 25% 13% 6.5% 1fr 11.5%;
+  height: 100%;
+  color: #fff;
+  font-family: 'Segoe UI', Arial, sans-serif;
+  font-size: 2.55cqw;
+}
+
+.lcd button {
+  appearance: none;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+/* Rows inside the display are given a size that does not depend on what is in them. */
+.lcd-top {
+  display: grid;
+  grid-template-columns: 35% 1fr;
+  grid-template-rows: minmax(0, 1fr);
+  min-height: 0;
+}
+
+.meter,
+.meter svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.meter-arc {
+  fill: none;
+  stroke: #fff;
+  stroke-width: 1.6;
+}
+
+.meter-arc.meter-over {
+  stroke: #4f8dff;
+}
+
+.meter-arc.meter-tx {
+  stroke: #8b919c;
+  stroke-width: 1;
+}
+
+.meter-tick {
+  stroke: #fff;
+  stroke-width: 1;
+}
+
+.meter svg text {
+  fill: #fff;
+  font:
+    italic 700 9px 'Segoe UI',
+    Arial,
+    sans-serif;
+  text-anchor: middle;
+  dominant-baseline: middle;
+}
+
+.meter svg text.meter-over {
+  fill: #4f8dff;
+}
+
+.meter svg text.meter-small,
+.meter svg text.meter-unit {
+  fill: #cfd4dc;
+  font-size: 7px;
+}
+
+.meter svg text.meter-name {
+  font-size: 12px;
+  text-anchor: start;
+}
+
+.meter svg text.meter-warning {
+  paint-order: stroke;
+  stroke: #e0261b;
+  stroke-width: 5px;
+  stroke-linejoin: round;
+}
+
+.meter-needle {
+  stroke: #ff3b30;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+}
+
+.lcd-header {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.5em;
+  min-width: 0;
+  padding: 0.3em 0.5em 0 0.1em;
+}
+
+.vfo-tags {
+  display: grid;
+  align-content: start;
+  justify-items: start;
+  gap: 0.14em;
+  font-size: 0.86em;
+  font-style: italic;
+  font-weight: 700;
+}
+
+.lcd .tag {
+  padding: 0 0.45em;
+  border-radius: 0.2em;
+  background: #5b6068;
+  line-height: 1.3;
+  white-space: nowrap;
+}
+
+.lcd .tag-mode {
+  background: #2f6fe0;
+}
+
+.lcd .tag-sub {
+  background: #d6362b;
+}
+
+.lcd .tag-dim {
+  padding-left: 0;
+  background: none;
+  color: #cfd4dc;
+}
+
+/* The frequencies are sized by the room they have, so that they fit whatever the font. */
+.vfo-frequencies {
+  display: grid;
+  grid-template-rows: minmax(0, 60fr) minmax(0, 40fr);
+  justify-items: end;
+  min-width: 0;
+  container-type: inline-size;
+}
+
+.lcd .frequency-main {
+  font:
+    italic 700 15.5cqw/1 Bahnschrift,
+    'Arial Narrow',
+    'Segoe UI',
+    Arial,
+    sans-serif;
+  letter-spacing: -0.02em;
+  white-space: nowrap;
+}
+
+.lcd .frequency-tx {
+  color: #ff7b7b;
+}
+
+.vfo-second-row {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.5em;
+  width: 100%;
+  min-width: 0;
+}
+
+.vfo-flags {
+  display: flex;
+  gap: 0.35em;
+  margin-right: auto;
+  font-size: 0.8em;
+}
+
+.flag {
+  color: var(--amber);
+}
+
+.flag-red {
+  color: var(--red);
+}
+
+.frequency-sub {
+  color: #b9bec8;
+  font:
+    italic 700 8cqw/1 Bahnschrift,
+    'Arial Narrow',
+    'Segoe UI',
+    Arial,
+    sans-serif;
+  white-space: nowrap;
+}
+
+.frequency-clar {
+  color: #fff;
+  font-size: 6cqw;
+}
+
+.frequency-clar b {
+  color: var(--red);
+}
+
+.lcd .func-box {
+  padding: 0.05em 0.4em;
+  border: 0.12em solid var(--amber);
+  border-radius: 0.15em;
+  color: var(--amber);
+  font-size: 0.9em;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.lcd-mid {
+  display: grid;
+  grid-template-columns: 55% 1fr;
+  grid-template-rows: minmax(0, 1fr);
+  gap: 1.2em;
+  min-height: 0;
+  padding: 0.15em 0.4em;
+}
+
+.settings-boxes {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  overflow: hidden;
+  border: 0.12em solid #cfd4dc;
+  border-radius: 0.35em;
+}
+
+.settings-boxes button {
+  display: grid;
+  align-content: center;
+  justify-items: center;
+  border-right: 0.08em solid #3a3d42;
+  font-size: 1.05em;
+  font-weight: 700;
+  line-height: 1.15;
+}
+
+.settings-boxes span {
+  color: var(--amber);
+  font-size: 0.9em;
+}
+
+.lcd .filter-display {
+  position: relative;
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.filter-display svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.filter-base {
+  stroke: #5b6068;
+  stroke-width: 0.5;
+}
+
+.filter-band {
+  fill: rgba(190, 196, 206, 0.35);
+  stroke: #e6e9ee;
+  stroke-width: 0.7;
+}
+
+.filter-notch,
+.filter-contour {
+  fill: none;
+  stroke-width: 0.9;
+}
+
+.filter-notch {
+  stroke: var(--red);
+}
+
+.filter-contour {
+  stroke: var(--amber);
+}
+
+.filter-width {
+  position: absolute;
+  bottom: 0.25em;
+  right: 0.2em;
+  color: var(--muted);
+  font-size: 0.75em;
+}
+
+.status-strip {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1em;
+  min-height: 0;
+  padding: 0 0.4em;
+  font-size: 0.82em;
+  font-weight: 700;
+}
+
+.icons {
+  display: flex;
+  gap: 0.4em;
+  padding: 0 0.5em;
+  border: 0.1em solid #cfd4dc;
+  border-radius: 0.6em;
+}
+
+.icon {
+  color: #4a4e55;
+}
+
+.icon-on {
+  color: #fff;
+}
+
+.icon-blink {
+  animation: blink 0.5s steps(2) infinite;
+}
+
+@keyframes blink {
+  50% {
+    opacity: 0.2;
+  }
+}
+
+.scope-summary {
+  padding: 0 0.6em;
+  border: 0.1em solid #cfd4dc;
+  border-radius: 0.6em;
+  color: var(--blue);
+  white-space: nowrap;
+}
+
+.scope {
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) auto;
+  min-height: 0;
+  padding: 0.1em 0.4em 0;
+}
+
+.scope-picture {
+  position: relative;
+  display: grid;
+  grid-template-rows: minmax(0, 42fr) minmax(0, 58fr);
+  min-height: 0;
+  overflow: hidden;
+  cursor: crosshair;
+  touch-action: manipulation;
+}
+
+.scope-picture canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.scope-marker {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: rgba(255, 80, 80, 0.9);
+  pointer-events: none;
+}
+
+.scope-marker::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -0.3em;
+  border: 0.3em solid transparent;
+  border-top-color: #ff5050;
+}
+
+.scope-notice {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  margin: 0;
+  padding: 1em;
+  background: rgba(0, 0, 0, 0.75);
+  color: var(--muted);
+  text-align: center;
+}
+
+.scope-scale {
+  position: relative;
+  height: 1.2em;
+  color: #cfd4dc;
+  font-size: 0.7em;
+}
+
+.scope-scale span {
+  position: absolute;
+  transform: translateX(-50%);
+  white-space: nowrap;
+}
+
+.soft-keys {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 0.12em;
+  padding: 0.15em 0.3em 0.25em;
+}
+
+.soft-keys button {
+  border: 0.08em solid #9aa1ad;
+  border-radius: 0.25em;
+  background: linear-gradient(#4a4e55, #2b2d31);
+  font-size: 1.05em;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+}
+
+.soft-keys button:disabled {
+  color: #6a6e75;
+  cursor: default;
+}
+
+.soft-keys button.soft-on {
+  color: #a5a1ff;
+}
+
+/* Screens put up over the lower part of the display. */
+
+.screen {
+  position: absolute;
+  inset: 25% 0 0;
+  z-index: 2;
+  display: grid;
+  grid-template-rows: auto 1fr;
+  align-content: start;
+  gap: 0.4em;
+  padding: 0.5em;
+  border-top: 0.1em solid #3a3d42;
+  background: #0b0c10;
+}
+
+.screen header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: var(--amber);
+  font-weight: 700;
+}
+
+.screen-grid {
+  display: grid;
+  align-content: start;
+  gap: 0.35em;
+}
+
+.screen-grid button,
+.keypad button,
+.func-grid button,
+.func-stepper,
+.lcd .screen-back {
+  display: grid;
+  align-content: center;
+  justify-items: center;
+  gap: 0.1em;
+  padding: 0.55em 0.2em;
+  border: 0.08em solid #7b818c;
+  border-radius: 0.3em;
+  background: linear-gradient(#3f434a, #24262a);
+  font-weight: 700;
+}
+
+.lcd .screen-back {
+  padding: 0.15em 1em;
+  color: var(--amber);
+}
+
+.lcd button.chosen {
+  border-color: var(--amber);
+  color: var(--amber);
+}
+
+.lcd .screen button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.screen-grid span,
+.func-grid span {
+  color: var(--blue);
+  font-size: 0.8em;
+}
+
+.screen-switches {
+  align-self: end;
+}
+
+.screen-func {
+  grid-template-rows: 1fr;
+  padding: 0.3em;
+}
+
+.func-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  grid-auto-rows: 1fr;
+  gap: 0.2em;
+  min-height: 0;
+}
+
+.func-grid button,
+.func-stepper {
+  padding: 0.1em;
+  font-size: 0.85em;
+  line-height: 1.1;
+}
+
+.func-grid .screen-back {
+  grid-column: span 2;
+}
+
+.func-stepper div {
+  display: flex;
+  align-items: center;
+  gap: 0.3em;
+}
+
+.lcd .func-stepper button {
+  padding: 0 0.4em;
+  border: 0.08em solid #7b818c;
+  border-radius: 0.2em;
+  background: #1a1b1e;
+}
+
+.keypad {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  align-content: start;
+  gap: 0.3em;
+}
+
+.keypad output {
+  grid-column: 1 / -1;
+  padding: 0 0.3em;
+  border-bottom: 0.08em solid #5b6068;
+  font:
+    italic 700 2em/1.2 'Segoe UI',
+    Arial,
+    sans-serif;
+  text-align: right;
+}
+
+.keypad-wide {
+  grid-column: span 3;
+}
+
+.lcd-offline {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  display: grid;
+  place-items: center;
+  margin: 0;
+  padding: 2em;
+  background: rgba(0, 0, 0, 0.85);
+  color: #cfd4dc;
+  font-size: 1.3em;
+  text-align: center;
+}
+
+.error {
+  position: fixed;
+  bottom: 1rem;
+  left: 50%;
+  max-width: min(90vw, 40rem);
+  margin: 0;
+  padding: 0.6rem 0.9rem;
+  transform: translateX(-50%);
+  border: 1px solid var(--red);
+  border-radius: 0.4rem;
+  background: #2a1214;
+  color: #ffb3b3;
+  font-size: 0.875rem;
+}
+
+/* On a narrow screen the radio is taken apart: display on top, controls below. */
+@media (max-width: 62rem) {
+  .rig {
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      'brand'
+      'lcd'
+      'right'
+      'left';
+    padding: 0.7rem;
+  }
+
+  .left-keys {
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+
+  .left-keys > .key,
+  .left-keys > .key-pair {
+    flex: 1 1 5rem;
+  }
+
+  /* The jacks are this browser's audio switches, so they stay; they just join the row. */
+  .left-keys > .jack {
+    flex: 0 0 auto;
+    margin: 0;
+    align-self: center;
+  }
+
+  .left-keys > .listen-controls {
+    flex: 1 1 10rem;
+    align-self: center;
+  }
+
+  .knob-dial .knob-body {
+    width: min(100%, 12rem);
+  }
+}
+
+/* The jacks double as this browser's audio switches: PHONES to listen, MIC to talk. */
+
+button.jack {
+  padding: 0;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+button.jack:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.jack-on {
+  border-color: var(--green);
+  color: #7fe3a4;
+  box-shadow: 0 0 0.8rem rgba(53, 196, 106, 0.8);
+}
+
+.jack-waiting {
+  border-color: var(--lamp);
+  color: #ffc56b;
+}
+
+.listen-controls {
+  display: grid;
+  gap: 0.3rem;
+}
+
+.volume {
+  width: 100%;
+  margin: 0;
+  accent-color: var(--green);
+}
+
+.output,
+.output-find {
+  width: 100%;
+  min-width: 0;
+  padding: 0.15rem;
+  border: 1px solid #0c0d0f;
+  border-radius: 0.3rem;
+  background: #1a1b1e;
+  color: var(--text);
+  font-size: 0.6rem;
+}
+
+.output-find {
+  cursor: pointer;
+}
+
+.listen-problem {
+  margin: 0;
+  color: #ffc56b;
+  font-size: 0.6rem;
+  line-height: 1.2;
+}
+
+/* The scope's other views: the 3DSS picture, and the audio panes of the MULTI view. */
+
+.scope-3dss {
+  position: absolute;
+  inset: 0;
+  visibility: hidden;
+}
+
+.scope-stream .scope-3dss {
+  visibility: visible;
+}
+
+.scope-stream .scope-trace,
+.scope-stream .scope-fall {
+  visibility: hidden;
+}
+
+.scope-audio {
+  display: none;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5em;
+  min-height: 0;
+}
+
+.scope.scope-multi {
+  grid-template-rows: minmax(0, 1fr) auto 36%;
+}
+
+.scope-multi .scope-audio {
+  display: grid;
+}
+
+.scope-audio figure {
+  position: relative;
+  min-height: 0;
+  margin: 0;
+  border: 0.06em solid #3a3d42;
+}
+
+.scope-audio canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.scope-audio figcaption {
+  position: absolute;
+  top: 0.1em;
+  left: 0.3em;
+  color: var(--muted);
+  font-size: 0.65em;
+}
+
+/* Screens that take the whole display, and what is on them. */
+
+.screen.screen-full {
+  inset: 0;
+  border-top: 0;
+}
+
+.lcd .screen button {
+  padding: 0.3em 0.6em;
+  border: 0.08em solid #7b818c;
+  border-radius: 0.3em;
+  background: linear-gradient(#3f434a, #24262a);
+  font-weight: 700;
+}
+
+.lcd input,
+.lcd select {
+  min-width: 0;
+  padding: 0.2em 0.35em;
+  border: 0.08em solid #7b818c;
+  border-radius: 0.25em;
+  background: #15171b;
+  color: #fff;
+  font: inherit;
+}
+
+.lcd .screen button.recording {
+  border-color: var(--red);
+  color: #ff8a8a;
+}
+
+.screen ul {
+  margin: 0;
+  padding: 0;
+  overflow: auto;
+  list-style: none;
+  scrollbar-width: thin;
+}
+
+.memory {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 11em;
+  gap: 0.5em;
+  min-height: 0;
+}
+
+.memory-list {
+  display: grid;
+  align-content: start;
+  gap: 0.2em;
+}
+
+.lcd .memory-list button {
+  display: grid;
+  grid-template-columns: 2.6em 6.5em 5em 1fr;
+  gap: 0.4em;
+  width: 100%;
+  text-align: left;
+}
+
+.memory-list b {
+  color: var(--amber);
+}
+
+.memory-actions {
+  display: grid;
+  align-content: start;
+  gap: 0.3em;
+}
+
+.memory-actions label {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: 0.4em;
+  color: var(--blue);
+  font-weight: 700;
+}
+
+.memory-scan {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.2em;
+}
+
+.lcd .memory-scan button {
+  padding: 0.3em 0;
+  font-size: 0.8em;
+}
+
+.messages {
+  display: grid;
+  align-content: start;
+  gap: 0.35em;
+}
+
+.message-row {
+  display: grid;
+  grid-template-columns: 3.4em minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 0.3em;
+}
+
+.message-row b {
+  color: var(--blue);
+}
+
+.message-voice {
+  grid-template-columns: 3.4em repeat(7, auto);
+  justify-content: start;
+  margin-top: 0.4em;
+}
+
+.menu {
+  display: grid;
+  grid-template-columns: 11.5em minmax(0, 1fr);
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: 0.4em;
+  min-height: 0;
+}
+
+.menu-screens {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 0.2em;
+}
+
+.lcd .menu-screens button {
+  padding: 0.3em 0.1em;
+  font-size: 0.8em;
+}
+
+.menu-groups {
+  display: grid;
+  align-content: start;
+  gap: 0.2em;
+}
+
+.lcd .menu-groups button {
+  width: 100%;
+  text-align: left;
+}
+
+.menu-items li {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.5em;
+  padding: 0.2em 0.3em;
+  border-bottom: 0.06em solid #2a2d33;
+}
+
+.menu-stepper {
+  display: flex;
+  align-items: center;
+  gap: 0.35em;
+}
+
+.menu-stepper output {
+  min-width: 4.5em;
+  text-align: center;
+}
+
+.menu-stepper input {
+  width: 9em;
+}
+
+.lcd .menu-stepper button {
+  padding: 0.05em 0.55em;
+}
+
+.menu-unknown {
+  color: var(--muted);
+}
+
+.power {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  align-content: center;
+  gap: 0.6em;
+}
+
+.power p {
+  grid-column: 1 / -1;
+  margin: 0;
+  font-size: 1.3em;
+  text-align: center;
+}
+
+.lcd-offline {
+  align-content: center;
+  justify-items: center;
+  gap: 1em;
+}
+
+.lcd-offline p {
+  margin: 0;
+}
+
+.lcd .lcd-offline button {
+  padding: 0.4em 1em;
+  border: 0.08em solid #7b818c;
+  border-radius: 0.3em;
+  background: linear-gradient(#3f434a, #24262a);
+  font-size: 0.8em;
+  font-weight: 700;
+}
+
+/* The FT8/FT4 monitor under the radio: a dark box in the style of the rig, with a key, the
+   mode choice and a list of decodes as WSJT-X lays them out. */
+
+.digi {
+  width: min(100%, 94rem);
+  margin-top: 0.9rem;
+  padding: 0.7rem 1rem 0.8rem;
+  border: 1px solid #45484e;
+  border-radius: 0.9rem;
+  background: linear-gradient(#2b2d31, #1f2124);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.06),
+    0 0.6rem 1.4rem rgba(0, 0, 0, 0.45);
+}
+
+.digi-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 0.8rem;
+  font-size: 0.72rem;
+}
+
+.digi-key {
+  min-width: 5.5rem;
+}
+
+.digi-modes {
+  display: inline-flex;
+  border: 1px solid #0c0d0f;
+  border-radius: 0.35rem;
+  overflow: hidden;
+}
+
+.digi-mode {
+  padding: 0.3rem 0.7rem;
+  border: 0;
+  background: #1a1b1e;
+  color: var(--muted);
+  font: inherit;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  cursor: pointer;
+}
+
+.digi-mode + .digi-mode {
+  border-left: 1px solid #0c0d0f;
+}
+
+.digi-mode-on {
+  background: #2f3237;
+  color: var(--amber);
+}
+
+.digi-tune,
+.digi-call input {
+  padding: 0.3rem 0.4rem;
+  border: 1px solid #0c0d0f;
+  border-radius: 0.35rem;
+  background: #1a1b1e;
+  color: var(--text);
+  font: inherit;
+}
+
+.digi-call {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: var(--muted);
+}
+
+.digi-call input {
+  width: 7rem;
+  text-transform: uppercase;
+  font-family: ui-monospace, Consolas, monospace;
+}
+
+.digi-status {
+  color: var(--muted);
+}
+
+.digi-status-bad {
+  color: #ffb3b3;
+}
+
+.digi-clock {
+  display: inline-grid;
+  gap: 0.2rem;
+  margin-left: auto;
+  color: var(--text);
+  font-family: ui-monospace, Consolas, monospace;
+  font-size: 0.95rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.digi-slot-bar {
+  display: block;
+  height: 0.25rem;
+  border-radius: 0.125rem;
+  background: #0c0d0f;
+  overflow: hidden;
+}
+
+.digi-slot-bar > span {
+  display: block;
+  height: 100%;
+  background: var(--green);
+}
+
+.digi-hint {
+  margin: 0.5rem 0 0;
+  color: #ffc56b;
+  font-size: 0.72rem;
+}
+
+.digi-list {
+  max-height: 22rem;
+  margin-top: 0.6rem;
+  border: 1px solid #0c0d0f;
+  border-radius: 0.4rem;
+  background: #0f1012;
+  overflow: auto;
+}
+
+.digi-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: ui-monospace, Consolas, monospace;
+  font-size: 0.78rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.digi-table th,
+.digi-table td {
+  padding: 0.12rem 0.5rem;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.digi-table th {
+  position: sticky;
+  top: 0;
+  background: #1a1b1e;
+  color: var(--muted);
+  font-weight: 500;
+  font-size: 0.68rem;
+  letter-spacing: 0.06em;
+}
+
+.digi-table td.digi-number {
+  text-align: right;
+}
+
+.digi-table td.digi-text {
+  width: 100%;
+}
+
+.digi-slot td {
+  padding-top: 0.35rem;
+  border-top: 1px solid #1f2124;
+  color: var(--muted);
+  font-size: 0.68rem;
+}
+
+.digi-cq td {
+  color: #7fe3a4;
+}
+
+.digi-mine td {
+  background: #3a1a1a;
+  color: #ffb3b3;
+}
+
+.digi-ap td {
+  color: var(--muted);
+}
+
+.digi-flag {
+  color: var(--muted);
+}
+
+.digi-empty td {
+  padding: 0.8rem 0.5rem;
+  color: var(--muted);
+  white-space: normal;
+}
+
+@media (max-width: 62rem) {
+  .digi {
+    padding: 0.6rem 0.7rem;
+  }
+
+  .digi-clock {
+    margin-left: 0;
+  }
+
+  .digi-table td:first-child,
+  .digi-table th:first-child {
+    display: none;
+  }
+}

@@ -1,0 +1,30 @@
+{
+  "name": "@radiobench/server",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Talks to the FT-710 over USB and serves the web interface",
+  "type": "module",
+  "scripts": {
+    "dev": "node --watch --watch-preserve-output --env-file-if-exists=../../.env src/index.ts",
+    "dev:sim": "node --watch --watch-preserve-output --env-file-if-exists=../../.env src/index.ts --sim",
+    "start": "node --env-file-if-exists=../../.env src/index.ts",
+    "start:sim": "node --env-file-if-exists=../../.env src/index.ts --sim",
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@e04/ft8ts": "^0.0.18",
+    "@fastify/static": "^10.1.5",
+    "@fastify/websocket": "^11.3.3",
+    "@kmamal/sdl": "^0.11.13",
+    "@radiobench/protocol": "*",
+    "fastify": "^5.12.5",
+    "koffi": "^3.3.2",
+    "selfsigned": "^5.5.0",
+    "serialport": "^13.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "@types/ws": "^8.18.2"
+  }
+}

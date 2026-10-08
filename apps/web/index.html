@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="color-scheme" content="dark" />
+    <title>RadioBench</title>
+    <script>
+      // Behind a reverse proxy the page may sit under a path such as /ft710. Its links are
+      // relative, so without the trailing slash they would resolve one level too high.
+      if (!location.pathname.endsWith('/') && !/\.\w+$/.test(location.pathname)) {
+        location.replace(location.pathname + '/' + location.search + location.hash);
+      }
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

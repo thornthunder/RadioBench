@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="color-scheme" content="dark" />
+    <title>RadioBench</title>
+    <style>
+      body {
+        margin: 0;
+        min-height: 100vh;
+        display: grid;
+        place-items: center;
+        background: #101114;
+        color: #eef0f4;
+        font-family: system-ui, 'Segoe UI', sans-serif;
+      }
+      main {
+        width: min(90vw, 44rem);
+        text-align: center;
+      }
+      h1 {
+        margin: 0 0 0.4rem;
+        font-size: 1.4rem;
+        font-style: italic;
+        letter-spacing: 0.06em;
+      }
+      p {
+        margin: 0.3rem 0;
+        color: #9aa1ad;
+      }
+      .failed {
+        color: #ffb3b3;
+      }
+      pre {
+        margin: 1.2rem 0 0;
+        padding: 0.8rem;
+        border: 1px solid #2a2c31;
+        border-radius: 0.5rem;
+        background: #0a0b0d;
+        color: #cfd4dc;
+        font-size: 0.78rem;
+        text-align: left;
+        white-space: pre-wrap;
+        overflow-wrap: anywhere;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>RadioBench</h1>
+      <p id="status">Starting the server…</p>
+      <pre id="log" hidden></pre>
+    </main>
+    <script>
+      const params = new URLSearchParams(location.search);
+      const status = params.get('status');
+      const log = params.get('log') ?? '';
+      const line = document.getElementById('status');
+      if (status === 'failed') {
+        line.textContent =
+          'The server stopped. It is started again in a moment; this is what it said:';
+        line.className = 'failed';
+      } else if (status === 'stopped') {
+        line.textContent = 'The server is stopped.';
+      }
+      if (log && status !== 'starting') {
+        const pre = document.getElementById('log');
+        pre.textContent = log;
+        pre.hidden = false;
+      }
+    </script>
+  </body>
+</html>

@@ -1,0 +1,12 @@
+node_modules/
+dist/
+# The server's own TLS certificate and key.
+apps/server/certs/
+# Staged and packaged desktop application.
+release/
+coverage/
+.env
+*.log
+*.tsbuildinfo
+.DS_Store
+Thumbs.db

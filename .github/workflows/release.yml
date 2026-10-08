@@ -1,0 +1,33 @@
+# Builds the Windows installer and attaches it to the GitHub release for the tag, together
+# with the latest.yml that installed copies read to find updates.
+#
+# To release: npm version minor (or patch), then git push --follow-tags.
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm test
+      - run: node scripts/package.mjs --publish
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: RadioBench-installer
+          path: |
+            release/dist/*.exe
+            release/dist/latest.yml
