@@ -112,6 +112,11 @@ npm run package     # the installer in release/dist
   deletions and even `Remove-Item` of a previous `release/dist`; `scripts/package.mjs` gives
   electron-builder an Electron copy with nothing left to delete and builds beside a folder it
   cannot remove.
+- npm 11.16 and later run a dependency's install script only if `allowScripts` in
+  `package.json` names it (older npm ignores the field). Electron's runtime download, SDL's
+  and koffi's binaries and serialport's prebuild lookup all happen in such scripts, so the
+  root `package.json` and the staged one that `scripts/package.mjs` writes both list them.
+  Without that, CI builds quietly produce an app with no Electron runtime and no audio.
 - `tsconfig.build.json` files compile the TypeScript that is distributed (`protocol`, `server`,
   `desktop`) with `rewriteRelativeImportExtensions`; a `new URL('./x.ts', import.meta.url)`
   is not rewritten, so pick the extension from `import.meta.url` as `engine.ts` does.

@@ -77,6 +77,9 @@ writeFileSync(
       main: 'apps/desktop/dist/main.js',
       dependencies,
       devDependencies: { electron: lockedVersion('electron') },
+      // Newer npm runs a dependency's install script only when allowed here. These three
+      // fetch or pick their native binaries in it.
+      allowScripts: { '@kmamal/sdl': true, koffi: true, '@serialport/bindings-cpp': true },
     },
     null,
     2,
@@ -117,8 +120,21 @@ const fresh = (dir) => {
     return other;
   }
 };
+// npm's install of the electron package downloads the runtime in a postinstall step, which
+// some environments skip (CI caches among them); fetched here if it is not there.
+const installedElectron = join(root, 'node_modules/electron/dist');
+if (
+  !existsSync(join(installedElectron, process.platform === 'win32' ? 'electron.exe' : 'electron'))
+) {
+  console.log('# fetching the Electron runtime');
+  run(
+    'node',
+    [join(root, 'node_modules/electron/install.js')],
+    join(root, 'node_modules/electron'),
+  );
+}
 const electronDist = fresh(join(root, 'release', 'electron'));
-cpSync(join(root, 'node_modules/electron/dist'), electronDist, {
+cpSync(installedElectron, electronDist, {
   recursive: true,
   filter: (source) => !/[\\/](resources[\\/]default_app\.asar|version)$/.test(source),
 });

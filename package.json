@@ -27,6 +27,13 @@
     "format": "prettier --write .",
     "format:check": "prettier --check ."
   },
+  "allowScripts": {
+    "electron": true,
+    "@kmamal/sdl": true,
+    "koffi": true,
+    "@serialport/bindings-cpp": true,
+    "electron-winstaller": true
+  },
   "devDependencies": {
     "concurrently": "^10.0.5",
     "prettier": "^3.9.9",
