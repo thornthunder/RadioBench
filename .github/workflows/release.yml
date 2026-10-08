@@ -22,9 +22,17 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm test
-      - run: node scripts/package.mjs --publish
+      - run: node scripts/package.mjs
+      # The assets are uploaded here rather than by electron-builder's own publisher, which
+      # has been seen to exit with an upload still under way.
+      - name: Attach the installer to the release
+        shell: bash
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          tag="${GITHUB_REF_NAME}"
+          gh release view "$tag" >/dev/null 2>&1 || gh release create "$tag" --title "RadioBench ${tag#v}" --generate-notes
+          gh release upload "$tag" --clobber release/dist/*.exe release/dist/*.blockmap release/dist/latest.yml
       - uses: actions/upload-artifact@v4
         with:
           name: RadioBench-installer

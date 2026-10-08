@@ -99,7 +99,9 @@ npm run package     # the installer in release/dist
   dependencies must be N-API (koffi, serialport and @kmamal/sdl are), so that they load in
   Electron without rebuilding; the package is not asar'd for the same reason. Releases are made
   by tagging (`npm version`, `git push --follow-tags`): `.github/workflows/release.yml` runs
-  `scripts/package.mjs --publish`, and electron-updater reads the release's `latest.yml`.
+  `scripts/package.mjs` and uploads the installer, block map and `latest.yml` with
+  `gh release upload` (electron-builder's own publisher once quit with the upload unfinished);
+  electron-updater reads the release's `latest.yml`.
 - Two things to know when running Electron from the agent's shell: VS Code's extension host
   sets `ELECTRON_RUN_AS_NODE=1`, which the shell inherits, so any `electron.exe` or
   `RadioBench.exe` launched from it runs as plain Node and exits quietly; unset it first

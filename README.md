@@ -239,11 +239,12 @@ git push --follow-tags
 
 The workflow compiles everything, stages a copy with only the runtime dependencies
 ([scripts/package.mjs](scripts/package.mjs)), packages it with electron-builder, and attaches
-`RadioBench-Setup-<version>.exe` and `latest.yml` to the release for the tag. Installed copies
-read `latest.yml` to find the update. `npm run package` does the same on your own PC (the
-installer lands in `release/dist/`), and `npm run package:dir` only lays out the unpacked
-application for a quick try. The desktop application is Electron: its own Node.js runs the
-compiled server as a child process, so the server never knows the difference.
+`RadioBench-Setup-<version>.exe`, its block map and `latest.yml` to the release for the tag
+(creating the release if there is none). Installed copies read `latest.yml` to find the update.
+`npm run package` builds the same installer on your own PC (it lands in `release/dist/`, or
+beside it if a file scanner holds the old one), and `npm run package:dir` only lays out the
+unpacked application for a quick try. The desktop application is Electron: its own Node.js
+runs the compiled server as a child process, so the server never knows the difference.
 
 ## Configuration
 

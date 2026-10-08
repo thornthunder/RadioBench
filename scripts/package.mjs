@@ -1,9 +1,11 @@
 // Builds the installable desktop application: compiles everything, stages a self-contained
 // copy with only the runtime dependencies, and hands it to electron-builder.
 //
-//   node scripts/package.mjs            builds release/dist/RadioBench Setup <version>.exe
-//   node scripts/package.mjs --publish  also uploads it to the GitHub release (needs GH_TOKEN)
-//   node scripts/package.mjs --dir      unpacked application only (release/dist/win-unpacked)
+//   node scripts/package.mjs        builds release/dist/RadioBench-Setup-<version>.exe
+//   node scripts/package.mjs --dir  unpacked application only (release/dist/win-unpacked)
+//
+// Uploading to the GitHub release is left to the release workflow (gh release upload):
+// electron-builder's own publisher has been seen to exit with an upload still under way.
 import { execFileSync } from 'node:child_process';
 import { cpSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -12,7 +14,6 @@ import { fileURLToPath } from 'node:url';
 const root = fileURLToPath(new URL('..', import.meta.url));
 const stage = join(root, 'release', 'app');
 const out = join(root, 'release', 'dist');
-const publish = process.argv.includes('--publish');
 const dirOnly = process.argv.includes('--dir');
 
 const run = (command, args, cwd = root) => {
@@ -150,7 +151,7 @@ const args = [
   '--win',
   ...(dirOnly ? ['--dir'] : []),
   '--publish',
-  publish ? 'always' : 'never',
+  'never',
 ];
 run('npx', args);
 console.log(`# done: ${output}`);
