@@ -1,6 +1,6 @@
 {
   "name": "radiobench",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "private": true,
   "description": "PC and LAN web front panel for the Yaesu FT-710",
   "license": "GPL-3.0-or-later",
