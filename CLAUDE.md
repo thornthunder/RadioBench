@@ -114,6 +114,10 @@ npm run package     # the installer in release/dist
   deletions and even `Remove-Item` of a previous `release/dist`; `scripts/package.mjs` gives
   electron-builder an Electron copy with nothing left to delete and builds beside a folder it
   cannot remove.
+- electron-builder packs only the `node_modules` of declared dependencies. The staged
+  application therefore gets `@radiobench/protocol` as a `file:` tarball dependency that
+  `scripts/package.mjs` packs from `packages/protocol/dist`; a package merely copied into
+  `node_modules` is dropped (0.1.0 shipped that way and could not start its server).
 - npm 11.16 and later run a dependency's install script only if `allowScripts` in
   `package.json` names it (older npm ignores the field). Electron's runtime download, SDL's
   and koffi's binaries and serialport's prebuild lookup all happen in such scripts, so the

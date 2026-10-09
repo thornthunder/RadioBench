@@ -55,6 +55,19 @@ cpSync(join(root, 'apps/desktop/static'), join(stage, 'apps/desktop/static'), { 
 cpSync(join(root, 'apps/desktop/build'), join(stage, 'build'), { recursive: true });
 cpSync(join(root, 'LICENSE'), join(stage, 'LICENSE'));
 
+// A directory emptied for reuse. On Windows a file scanner tends to hold freshly written
+// files for a while; a directory it still holds is left alone and a fresh one used instead.
+const fresh = (dir) => {
+  try {
+    rmSync(dir, { recursive: true, force: true });
+    return dir;
+  } catch {
+    const other = `${dir}-${Date.now()}`;
+    console.log(`${dir} is in use; using ${other}`);
+    return other;
+  }
+};
+
 // Only what runs: the server's and the desktop application's dependencies, at the versions
 // of the lockfile. Electron itself is what electron-builder packages.
 const dependencies = {};
@@ -62,6 +75,28 @@ for (const name of Object.keys({ ...serverPackage.dependencies, ...desktopPackag
   if (name.startsWith('@radiobench/')) continue;
   dependencies[name] = lockedVersion(name);
 }
+// The protocol package is shared source that the compiled server imports as a package. It is
+// packed as a tarball and installed like any other dependency: electron-builder takes along
+// the node_modules of the declared dependencies, and a package merely copied in gets lost.
+const protocolDir = fresh(join(root, 'release', 'protocol'));
+cpSync(join(root, 'packages/protocol/dist'), join(protocolDir, 'dist'), { recursive: true });
+writeFileSync(
+  join(protocolDir, 'package.json'),
+  JSON.stringify(
+    {
+      name: '@radiobench/protocol',
+      version: rootPackage.version,
+      type: 'module',
+      exports: { '.': './dist/index.js' },
+      files: ['dist'],
+    },
+    null,
+    2,
+  ),
+);
+const tarball = `radiobench-protocol-${rootPackage.version}.tgz`;
+run('npm', ['pack', '--silent', '--pack-destination', stage], protocolDir);
+dependencies['@radiobench/protocol'] = `file:./${tarball}`;
 writeFileSync(
   join(stage, 'package.json'),
   JSON.stringify(
@@ -87,40 +122,13 @@ writeFileSync(
   ),
 );
 run('npm', ['install', '--omit=dev', '--no-audit', '--no-fund', '--ignore-scripts=false'], stage);
-
-// The protocol package is shared source; the compiled server imports it as a package. It goes
-// in after npm install, which would otherwise prune it as not being a dependency.
-const protocol = join(stage, 'node_modules/@radiobench/protocol');
-cpSync(join(root, 'packages/protocol/dist'), join(protocol, 'dist'), { recursive: true });
-writeFileSync(
-  join(protocol, 'package.json'),
-  JSON.stringify(
-    {
-      name: '@radiobench/protocol',
-      version: rootPackage.version,
-      type: 'module',
-      exports: { '.': './dist/index.js' },
-    },
-    null,
-    2,
-  ),
-);
+if (!existsSync(join(stage, 'node_modules/@radiobench/protocol/dist/index.js'))) {
+  throw new Error('The protocol package did not get installed into the staged application');
+}
 
 console.log('# packaging');
 // electron-builder is given the Electron that npm installed, without the two files it would
-// otherwise delete after copying: on Windows a file scanner tends to hold a freshly written
-// file for a while, and a failed deletion fails the whole build. For the same reason a
-// previous copy or output that the scanner still holds is left alone and a fresh one used.
-const fresh = (dir) => {
-  try {
-    rmSync(dir, { recursive: true, force: true });
-    return dir;
-  } catch {
-    const other = `${dir}-${Date.now()}`;
-    console.log(`${dir} is in use; using ${other}`);
-    return other;
-  }
-};
+// otherwise delete after copying: a failed deletion fails the whole build.
 // npm's install of the electron package downloads the runtime in a postinstall step, which
 // some environments skip (CI caches among them); fetched here if it is not there.
 const installedElectron = join(root, 'node_modules/electron/dist');
