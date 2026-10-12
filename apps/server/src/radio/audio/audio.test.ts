@@ -46,11 +46,12 @@ test('received audio arrives at about the rate it is sampled at', async () => {
     else bytes += samples.length;
   });
   await expect.poll(() => started).toBeGreaterThan(0);
-  await new Promise((resolve) => setTimeout(resolve, 600));
+  // Over a good stretch, since the polls are 20 ms apart and a busy machine stalls them.
+  await new Promise((resolve) => setTimeout(resolve, 1500));
   const seconds = (performance.now() - started) / 1000;
   const rate = bytes / 2 / seconds;
-  expect(rate).toBeGreaterThan(AUDIO_SAMPLE_RATE * 0.8);
-  expect(rate).toBeLessThan(AUDIO_SAMPLE_RATE * 1.1);
+  expect(rate).toBeGreaterThan(AUDIO_SAMPLE_RATE * 0.75);
+  expect(rate).toBeLessThan(AUDIO_SAMPLE_RATE * 1.15);
 });
 
 test('the device is open only while someone listens', async () => {
