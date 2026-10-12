@@ -1,4 +1,5 @@
 import {
+  CW_SEND_LENGTH,
   DIGI_SLOT_MS,
   MONITOR_MODES,
   type CwState,
@@ -141,6 +142,107 @@ function SlotRows({ batch, myCall }: { batch: DecodeBatch; myCall: string }) {
           </tr>
         ))}
     </>
+  );
+}
+
+/** The keyer speeds on offer, in words per minute. */
+const KEYER_SPEEDS = [10, 12, 14, 16, 18, 20, 22, 25, 28, 30, 35, 40];
+
+/**
+ * A line to send in Morse with the radio's keyer: typed here, it goes through one of the
+ * radio's CW memories and out on the air with break-in on, or to the sidetone alone without.
+ */
+function CwSend() {
+  const { state, cwSending, set, request } = useRadio();
+  const [text, setText] = useState('');
+  const connected = state?.link === 'connected';
+  const inCw = !!state?.modeMain?.startsWith('CW');
+  const problem = !connected
+    ? 'The radio cannot be reached'
+    : !state.txEnabled
+      ? 'Transmit controls are switched off on the server (RADIOBENCH_TX)'
+      : !inCw
+        ? 'Put the radio in a CW mode to send'
+        : null;
+  const clean = text.toUpperCase().replace(/[^A-Z0-9 !"#$%&'()*+,\-./:<=>?@[\\\]^_]/g, '');
+
+  return (
+    <form
+      className="cw-send"
+      onSubmit={(event) => {
+        event.preventDefault();
+        if (problem || cwSending || clean.trim() === '') return;
+        request({ type: 'cwSend', text: clean.trim() });
+      }}
+    >
+      <input
+        type="text"
+        value={text}
+        maxLength={CW_SEND_LENGTH}
+        placeholder={problem ?? 'Text to send in Morse'}
+        disabled={problem !== null || cwSending !== null}
+        spellCheck={false}
+        autoCapitalize="characters"
+        aria-label="Text to send in Morse"
+        onChange={(event) => setText(event.target.value)}
+      />
+      {cwSending ? (
+        <Key className="cw-send-key" lit="red" onPress={() => request({ type: 'cwStop' })}>
+          STOP
+        </Key>
+      ) : (
+        <Key
+          className="cw-send-key"
+          disabled={problem !== null || clean.trim() === ''}
+          title={problem ?? 'Sends the text with the radio’s keyer (Enter does too)'}
+          onPress={() => {
+            if (!problem && clean.trim() !== '') request({ type: 'cwSend', text: clean.trim() });
+          }}
+        >
+          SEND
+        </Key>
+      )}
+      {cwSending ? (
+        <span className="cw-progress">
+          Sending {cwSending.sent}/{cwSending.text.length}
+        </span>
+      ) : null}
+      <label className="cw-speed">
+        Speed
+        <select
+          value={state?.keySpeed ?? ''}
+          disabled={!connected}
+          aria-label="Keyer speed"
+          onChange={(event) => set('keySpeed', Number(event.target.value))}
+        >
+          {state?.keySpeed !== null &&
+          state?.keySpeed !== undefined &&
+          !KEYER_SPEEDS.includes(state.keySpeed) ? (
+            <option value={state.keySpeed}>{state.keySpeed} WPM</option>
+          ) : null}
+          {KEYER_SPEEDS.map((wpm) => (
+            <option key={wpm} value={wpm}>
+              {wpm} WPM
+            </option>
+          ))}
+        </select>
+      </label>
+      <label className="cw-breakin">
+        <input
+          type="checkbox"
+          checked={!!state?.breakIn}
+          disabled={!connected}
+          onChange={(event) => set('breakIn', event.target.checked)}
+        />
+        BK-IN
+      </label>
+      {inCw && state && !state.breakIn ? (
+        <p className="cw-send-note">
+          With BK-IN off the radio keys its sidetone only, for practice; switch it on to go on the
+          air.
+        </p>
+      ) : null}
+    </form>
   );
 }
 
@@ -302,6 +404,7 @@ export function DigiPanel() {
           </pre>
         </div>
       ) : null}
+      {morse ? <CwSend /> : null}
       <div
         className="digi-list"
         ref={morse ? undefined : scroller}

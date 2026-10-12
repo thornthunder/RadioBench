@@ -13,6 +13,7 @@ import type { FastifyInstance } from 'fastify';
 import { afterEach, expect, test } from 'vitest';
 import { AUTO_BAUD, SIM_PORT } from '../config.ts';
 import { Audio, SimulatedAudioDevice } from '../radio/audio/audio.ts';
+import { CwSender } from '../radio/cw/sender.ts';
 import { Decoder, type DecodeEngine } from '../radio/digi/decoder.ts';
 import { Radio } from '../radio/radio.ts';
 import { Scope } from '../radio/scope/scope.ts';
@@ -49,7 +50,14 @@ async function serve(txEnabled: boolean): Promise<string> {
   decoder = new Decoder(audio, new TestEngine(), {
     dial: () => ({ hz: 14_074_000, mode: 'DATA-U', cwPitchHz: null }),
   });
-  app = await createHttpServer(radio, new Scope(null), audio, decoder, 'no-web-client-here');
+  app = await createHttpServer(
+    radio,
+    new Scope(null),
+    audio,
+    decoder,
+    new CwSender(radio, 5),
+    'no-web-client-here',
+  );
   await app.listen({ host: '127.0.0.1', port: 0 });
   radio.start();
   await expect.poll(() => radio.getState().sMeter, { timeout: 5000 }).not.toBeNull();

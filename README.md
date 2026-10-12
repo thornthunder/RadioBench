@@ -199,6 +199,15 @@ kind: fine for clean, machine-sent or steady hand-sent code at a fair signal str
 match for an experienced ear on a weak or ragged signal. "Clear" empties the text in this
 browser.
 
+Under the text is a line to **send** Morse: type and press SEND (or Enter), and the radio's
+own keyer sends it at the speed chosen beside it, which is the radio's keyer speed. The FT-710
+keys from a PC only through its CW memories, so the text goes into one of them (memory 5
+unless `RADIOBENCH_CW_MEMORY` says otherwise), fifty characters at a time, and whatever that
+memory held is put back afterwards. With BK-IN on the radio transmits what it keys; with it
+off it sounds the sidetone only, which makes a practice mode. The radio has to be in a CW mode,
+and the server's transmit controls have to be on (see Transmitting). STOP cuts a transmission
+short. Letters, digits and the usual punctuation can be sent; prosigns cannot.
+
 For FT8 and FT4, "Tune to…" puts the
 radio on a band's usual frequency in DATA-U. Each slot (15 s for FT8, 7.5 s for FT4, cut by the
 PC's clock from the top of the UTC minute, as WSJT-X does it) is listed with the time, the dial
@@ -217,8 +226,8 @@ given to others.
 ## Transmitting
 
 Everything that puts the radio on the air is refused unless the server is started with
-`RADIOBENCH_TX=on`: MOX, VOX, antenna tuning, sending a CW text or voice memory, and
-microphone audio. It is off by default because none of it has been tried on a real radio yet.
+`RADIOBENCH_TX=on`: MOX, VOX, antenna tuning, sending a CW text or voice memory, typed Morse,
+and microphone audio. It is off by default because none of it has been tried on a real radio yet.
 With it on, the server releases MOX by itself when the browser that switched it on
 disconnects, after three minutes, and when the server stops.
 
@@ -264,7 +273,8 @@ runs the compiled server as a child process, so the server never knows the diffe
 
 The installed application keeps its settings in `%APPDATA%\RadioBench\settings.json` (tray
 menu → "Settings file…"), with the same meaning as the variables below: `catPort`, `catBaud`,
-`httpPort`, `httpsPort`, `allowTransmit`, `scope`, `audio`, `decodeDepth`, `openAtLogin`. Its
+`httpPort`, `httpsPort`, `allowTransmit`, `scope`, `audio`, `decodeDepth`, `cwMemory`,
+`openAtLogin`. Its
 log is in `%APPDATA%\RadioBench\logs\`. When run from source, the server reads these
 environment variables, or a `.env` file in the repository root (copy `.env.example`).
 
@@ -285,6 +295,7 @@ Defaults need no configuration. To change them, copy [.env.example](.env.example
 | `RADIOBENCH_AUDIO_IN`      | `USB Audio Device`       | Part of the name of the radio's recording device       |
 | `RADIOBENCH_AUDIO_OUT`     | `USB Audio Device`       | Part of the name of the radio's playback device        |
 | `RADIOBENCH_DECODE_DEPTH`  | `3`                      | FT8/FT4 decoding depth: `1` fast, `2` normal, `3` deep |
+| `RADIOBENCH_CW_MEMORY`     | `5`                      | The CW memory, `1` to `5`, typed Morse is sent through |
 | `RADIOBENCH_TX`            | `off`                    | `on` lets clients put the radio on the air             |
 
 ## Layout

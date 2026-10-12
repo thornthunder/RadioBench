@@ -7,6 +7,7 @@ import { afterAll, beforeAll, expect, test } from 'vitest';
 import WebSocket from 'ws';
 import { AUTO_BAUD, SIM_PORT } from '../config.ts';
 import { Audio } from '../radio/audio/audio.ts';
+import { CwSender } from '../radio/cw/sender.ts';
 import { Decoder } from '../radio/digi/decoder.ts';
 import { Radio } from '../radio/radio.ts';
 import { Scope } from '../radio/scope/scope.ts';
@@ -30,10 +31,19 @@ beforeAll(async () => {
     { depth: 1, threads: 1, decode: async () => [], close: () => {} },
     { dial: () => ({ hz: null, mode: null, cwPitchHz: null }) },
   );
-  app = await createHttpServer(radio, new Scope(null), audio, decoder, 'no-web-client-here', {
-    https: { key: certificate.key, cert: certificate.cert },
-    certificate: certificate.cert,
-  });
+  const sender = new CwSender(radio, 5);
+  app = await createHttpServer(
+    radio,
+    new Scope(null),
+    audio,
+    decoder,
+    sender,
+    'no-web-client-here',
+    {
+      https: { key: certificate.key, cert: certificate.cert },
+      certificate: certificate.cert,
+    },
+  );
   await app.listen({ host: '127.0.0.1', port: 0 });
   const address = app.server.address();
   port = typeof address === 'object' && address ? address.port : 0;

@@ -85,6 +85,12 @@ npm run package     # the installer in release/dist
   synthesize keying with noise; the constants in `cw.ts` were tuned against them and against
   loops of noise alone, keying then silence, and a step in the noise, so change them with
   those in hand. The simulated audio device keys a CW station on 600 Hz.
+- Morse is sent (`radio/cw/sender.ts`) the only way the FT-710 allows from a PC: the text is
+  stored in a CW memory (`RADIOBENCH_CW_MEMORY`, 5 by default) and played with `KY0n`, in
+  chunks of 50, and the memory's own text is put back afterwards. Keying over the Standard
+  COM port's DTR line would be the real thing, but opening that port asserts the lines, which
+  keys the transmitter; it stays off limits. The simulator plays memories for as long as
+  their keying takes, on the air when break-in is on.
 - All CAT traffic goes through `CatClient`, one command at a time, and is scheduled by the one
   loop in `Radio`: waiting commands first, otherwise reads. State changes only through what the
   radio says (`decode`), apart from a setting being taken as set once the radio has accepted it.

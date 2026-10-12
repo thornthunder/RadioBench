@@ -10,6 +10,7 @@ import {
   type Action,
   type AudioState,
   type ClientMessage,
+  type CwSending,
   type CwState,
   type DecodeBatch,
   type DecoderState,
@@ -53,6 +54,8 @@ export interface RadioApi {
   cw: { text: string; state: CwState } | null;
   /** Empties the Morse text shown in this browser. */
   clearCw(): void;
+  /** Morse the radio is sending right now; null when it is not. */
+  cwSending: CwSending | null;
   /** Menu values read so far: the characters of the radio's reply, by menu item id. */
   menu: Record<string, string>;
   /** The memory channels in use; null until they have been asked for. */
@@ -86,6 +89,7 @@ export function RadioProvider({ children }: { children: ReactNode }) {
   const [decoder, setDecoder] = useState<DecoderState | null>(null);
   const [decodes, setDecodes] = useState<DecodeBatch[]>([]);
   const [cw, setCw] = useState<{ text: string; state: CwState } | null>(null);
+  const [cwSending, setCwSending] = useState<CwSending | null>(null);
   const [menu, setMenu] = useState<Record<string, string>>({});
   const [memories, setMemories] = useState<MemoryChannel[] | null>(null);
   const [messages, setMessages] = useState<string[] | null>(null);
@@ -129,6 +133,8 @@ export function RadioProvider({ children }: { children: ReactNode }) {
             ),
             state: message.cw,
           }));
+        case 'cwSending':
+          return setCwSending(message.sending);
         case 'menu':
           return setMenu((current) => ({ ...current, ...message.values }));
         case 'memories':
@@ -230,6 +236,7 @@ export function RadioProvider({ children }: { children: ReactNode }) {
       decodes,
       cw,
       clearCw,
+      cwSending,
       menu,
       memories,
       messages,
@@ -249,6 +256,7 @@ export function RadioProvider({ children }: { children: ReactNode }) {
       decodes,
       cw,
       clearCw,
+      cwSending,
       menu,
       memories,
       messages,

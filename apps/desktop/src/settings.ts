@@ -18,6 +18,8 @@ export interface Settings {
   audio: boolean;
   /** FT8/FT4 decoding depth, 1 to 3. */
   decodeDepth: number;
+  /** The radio's CW memory, 1 to 5, through which typed Morse is sent. */
+  cwMemory: number;
   /** Whether RadioBench starts when the user logs on to Windows. */
   openAtLogin: boolean;
 }
@@ -31,6 +33,7 @@ export const DEFAULT_SETTINGS: Settings = {
   scope: true,
   audio: true,
   decodeDepth: 3,
+  cwMemory: 5,
   openAtLogin: false,
 };
 
@@ -62,6 +65,7 @@ export function loadSettings(file: string): Settings {
   }
   if (![1, 2, 3].includes(settings.decodeDepth))
     settings.decodeDepth = DEFAULT_SETTINGS.decodeDepth;
+  if (![1, 2, 3, 4, 5].includes(settings.cwMemory)) settings.cwMemory = DEFAULT_SETTINGS.cwMemory;
   return settings;
 }
 
@@ -89,6 +93,7 @@ export function serverEnvironment(settings: Settings, paths: ServerPaths): Recor
     RADIOBENCH_SCOPE: settings.scope ? 'on' : 'off',
     RADIOBENCH_AUDIO: settings.audio ? 'on' : 'off',
     RADIOBENCH_DECODE_DEPTH: String(settings.decodeDepth),
+    RADIOBENCH_CW_MEMORY: String(settings.cwMemory),
     RADIOBENCH_WEB_ROOT: paths.webRoot,
     RADIOBENCH_CERT_DIR: paths.certDir,
     RADIOBENCH_FT4222_DLL: paths.ft4222Dll,

@@ -5,6 +5,7 @@ import {
   encodeMenuValue,
   type MenuItem,
 } from '@radiobench/protocol';
+import { ditMs, keying } from '../cw/morse.ts';
 import type { CatTransport, TransportHandlers } from './transport.ts';
 
 const REPLY_DELAY_MS = 2;
@@ -109,7 +110,9 @@ const BAND_FREQUENCIES_HZ = [
 ];
 
 /** Commands that do something once and that the simulator merely accepts. */
-const ACCEPTED = /^(ZI0|QI|QR|MA|AM|CH[01]|UP|DN|KY[01][0-5]|DT0\d{8}|DT1\d{6})$/;
+const ACCEPTED = /^(ZI0|QI|QR|MA|AM|CH[01]|UP|DN|DT0\d{8}|DT1\d{6})$/;
+/** The mode codes in which the keyer keys: CW-U and CW-L. */
+const CW_MODE_CODES = ['3', '7'];
 
 /**
  * A stand-in FT-710 that answers the CAT commands RadioBench uses, so the app
@@ -129,6 +132,9 @@ export class SimulatedTransport implements CatTransport {
   private buffer = '';
   private sMeter = 60;
   private tuningUntil = 0;
+  /** Until when the keyer is playing a CW memory, and whether that goes on the air. */
+  private keyingUntil = 0;
+  private keyingOnAir = false;
   private memoryMode = false;
   private off = false;
   private woken = false;
@@ -160,7 +166,28 @@ export class SimulatedTransport implements CatTransport {
   }
 
   private get transmitting(): boolean {
-    return this.get('MX') === '1' || Date.now() < this.tuningUntil;
+    return (
+      this.get('MX') === '1' ||
+      Date.now() < this.tuningUntil ||
+      (this.keyingOnAir && Date.now() < this.keyingUntil)
+    );
+  }
+
+  /**
+   * KY0n plays CW memory n with the keyer, at its speed, in a CW mode; with break-in on that
+   * is a transmission, otherwise sidetone only. KY00 stops it.
+   */
+  private play(number: number): null {
+    if (number === 0) {
+      this.keyingUntil = 0;
+      return null;
+    }
+    const text = this.messages[number - 1] ?? '';
+    if (text === '' || !CW_MODE_CODES.includes(this.get('MD0'))) return null;
+    const dits = keying(text).reduce((sum, element) => sum + element.dits, 0) + 7;
+    this.keyingUntil = Date.now() + dits * ditMs(Number(this.get('KS')) || 20);
+    this.keyingOnAir = this.get('BI') === '1';
+    return null;
   }
 
   private mainFrequency(): 'FA' | 'FB' {
@@ -247,6 +274,8 @@ export class SimulatedTransport implements CatTransport {
     const band = /^BS(\d\d)$/.exec(command);
     if (band) return this.goToBand(Number(band[1]));
     if (ACCEPTED.test(command)) return null;
+    const play = /^KY0([0-5])$/.exec(command);
+    if (play) return this.play(Number(play[1]));
 
     const memory = /^(MR|MT|MW)(.{3})(.*)$/.exec(command);
     if (memory) return this.memoryCommand(memory[1] ?? '', memory[2] ?? '', memory[3] ?? '');

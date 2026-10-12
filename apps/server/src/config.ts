@@ -1,6 +1,6 @@
 import { fileURLToPath } from 'node:url';
 import { parseArgs } from 'node:util';
-import { DEFAULT_HTTP_PORT, DIGI_DEPTHS } from '@radiobench/protocol';
+import { CW_MESSAGES, DEFAULT_HTTP_PORT, DIGI_DEPTHS } from '@radiobench/protocol';
 
 /** CAT port value that selects the built-in simulator instead of a serial port. */
 export const SIM_PORT = 'sim';
@@ -50,6 +50,8 @@ export interface Config {
   audio: AudioConfig;
   /** How hard the FT8/FT4 decoder tries, as WSJT-X's 1 (fast), 2 (normal) or 3 (deep). */
   decodeDepth: number;
+  /** The radio's CW memory, 1 to 5, through which typed Morse is sent. */
+  cwMemory: number;
   /** Whether clients may key the transmitter: MOX, VOX and antenna tuning. */
   txEnabled: boolean;
 }
@@ -87,8 +89,13 @@ export function loadConfig(argv = process.argv.slice(2), env = process.env): Con
   if (!(DIGI_DEPTHS as readonly number[]).includes(decodeDepth)) {
     throw new Error(`RADIOBENCH_DECODE_DEPTH must be 1, 2 or 3, got "${decodeDepth}"`);
   }
+  const cwMemory = integer(env, 'RADIOBENCH_CW_MEMORY', 5);
+  if (cwMemory > CW_MESSAGES) {
+    throw new Error(`RADIOBENCH_CW_MEMORY must be 1 to ${CW_MESSAGES}, got "${cwMemory}"`);
+  }
   return {
     decodeDepth,
+    cwMemory,
     webRoot: env.RADIOBENCH_WEB_ROOT || fileURLToPath(new URL('../../web/dist', import.meta.url)),
     audio: {
       source: !audio ? 'off' : port === SIM_PORT ? 'sim' : 'radio',

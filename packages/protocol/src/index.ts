@@ -158,6 +158,15 @@ export const MONITOR_MODES = [...DIGI_MODES, 'CW'] as const;
 export type MonitorMode = (typeof MONITOR_MODES)[number];
 /** How much decoded Morse the server keeps for clients that join later. */
 export const CW_TEXT_KEPT = 4000;
+/** The most text that can be sent in Morse at once. */
+export const CW_SEND_LENGTH = 300;
+
+/** Morse being sent by the radio's keyer: the text, and how much of it has been keyed. */
+export interface CwSending {
+  text: string;
+  /** Characters keyed, or being keyed, so far. */
+  sent: number;
+}
 
 /** What the Morse decoder is making of the audio. */
 export interface CwState {
@@ -226,6 +235,8 @@ export type ServerMessage =
   | { type: 'decodes'; batches: DecodeBatch[] }
   // Decoded Morse: text to add to what was shown (append), or the recent text to start from.
   | { type: 'cw'; text: string; append: boolean; cw: CwState }
+  // Morse being sent, or null once it is done or stopped.
+  | { type: 'cwSending'; sending: CwSending | null }
   // A command this client sent could not be carried out.
   | { type: 'error'; message: string };
 
@@ -236,6 +247,9 @@ export type ClientMessage =
   | { type: 'listen'; on: boolean }
   // Start or stop receiving decodes; the mode, when given, is switched for everyone.
   | { type: 'decode'; on: boolean; mode?: MonitorMode }
+  // Sends text in Morse with the radio's keyer, through one of its CW memories.
+  | { type: 'cwSend'; text: string }
+  | { type: 'cwStop' }
   | { type: 'menuRead'; ids: string[] }
   // The value is an option's position, a number or text, as the menu item calls for.
   | { type: 'menuSet'; id: string; value: number | string }
@@ -323,10 +337,15 @@ const isNumberIn = (value: unknown, min: number, max: number): value is number =
 const isPrintable = (value: unknown, maxLength: number): value is string =>
   typeof value === 'string' && value.length <= maxLength && /^[\x20-\x3a\x3c-\x7d]*$/.test(value);
 /** What the radio's keyer can send: letters, digits and the punctuation Morse has signs for. */
+const CW_CHARACTERS = /^[A-Z0-9 !"#$%&'()*+,\-./:<=>?@[\\\]^_]*$/;
 const isCwText = (value: unknown): value is string =>
+  typeof value === 'string' && value.length <= CW_MESSAGE_LENGTH && CW_CHARACTERS.test(value);
+/** Text to send: the same characters, longer, and not blank. */
+export const isCwSendText = (value: unknown): value is string =>
   typeof value === 'string' &&
-  value.length <= CW_MESSAGE_LENGTH &&
-  /^[A-Z0-9 !"#$%&'()*+,\-./:<=>?@[\\\]^_]*$/.test(value);
+  value.trim() !== '' &&
+  value.length <= CW_SEND_LENGTH &&
+  CW_CHARACTERS.test(value);
 
 /** Parses a frame received from a client; null if it is not a valid ClientMessage. */
 export function parseClientMessage(raw: string): ClientMessage | null {
@@ -381,7 +400,10 @@ export function parseClientMessage(raw: string): ClientMessage | null {
     }
     case 'memoryList':
     case 'messageList':
+    case 'cwStop':
       return { type: message.type };
+    case 'cwSend':
+      return isCwSendText(message.text) ? { type: 'cwSend', text: message.text } : null;
     case 'memoryRecall':
     case 'memoryStore':
       return isChannel(message.channel) ? { type: message.type, channel: message.channel } : null;

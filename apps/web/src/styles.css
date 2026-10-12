@@ -1586,3 +1586,63 @@ button.jack:disabled {
   font: inherit;
   cursor: pointer;
 }
+
+/* Sending Morse: a line to type into under the decoded text, with the keyer's speed. */
+
+.cw-send {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 0.8rem;
+  margin-top: 0.6rem;
+  font-size: 0.72rem;
+}
+
+.cw-send input[type='text'] {
+  flex: 1 1 16rem;
+  min-width: 0;
+  padding: 0.4rem 0.5rem;
+  border: 1px solid #0c0d0f;
+  border-radius: 0.35rem;
+  background: #0f1012;
+  color: var(--text);
+  font-family: ui-monospace, Consolas, monospace;
+  font-size: 0.95rem;
+  text-transform: uppercase;
+}
+
+.cw-send input[type='text']:disabled {
+  opacity: 0.6;
+}
+
+.cw-send-key {
+  min-width: 4.5rem;
+}
+
+.cw-speed,
+.cw-breakin {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  color: var(--muted);
+}
+
+.cw-speed select {
+  padding: 0.3rem 0.4rem;
+  border: 1px solid #0c0d0f;
+  border-radius: 0.35rem;
+  background: #1a1b1e;
+  color: var(--text);
+  font: inherit;
+}
+
+.cw-progress {
+  color: var(--amber);
+  font-variant-numeric: tabular-nums;
+}
+
+.cw-send-note {
+  flex-basis: 100%;
+  margin: 0;
+  color: var(--muted);
+}

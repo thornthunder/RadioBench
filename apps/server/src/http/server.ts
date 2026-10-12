@@ -17,6 +17,7 @@ import {
 } from '@radiobench/protocol';
 import fastify, { type FastifyInstance } from 'fastify';
 import type { Audio } from '../radio/audio/audio.ts';
+import type { CwSender } from '../radio/cw/sender.ts';
 import type { Decoder } from '../radio/digi/decoder.ts';
 import type { Radio } from '../radio/radio.ts';
 import type { Scope } from '../radio/scope/scope.ts';
@@ -53,6 +54,7 @@ export async function createHttpServer(
   scope: Scope,
   audio: Audio,
   decoder: Decoder,
+  sender: CwSender,
   webRoot: string,
   options: ServerOptions = {},
 ): Promise<FastifyInstance> {
@@ -81,6 +83,7 @@ export async function createHttpServer(
   // Decodes are small and go to everyone; a client that has not asked ignores them.
   decoder.onBatch((batch) => broadcast({ type: 'decodes', batches: [batch] }));
   decoder.onCw(({ text, cw }) => broadcast({ type: 'cw', text, append: true, cw }));
+  sender.onState((sending) => broadcast({ type: 'cwSending', sending }));
   scope.onFrame((frame) => {
     const packet = encodeScopeFrame(frame);
     for (const socket of sockets) sendFresh(socket, packet);
@@ -130,6 +133,10 @@ export async function createHttpServer(
         return radio.record(message.on);
       case 'power':
         return radio.power(message.on);
+      case 'cwSend':
+        return sender.send(message.text);
+      case 'cwStop':
+        return sender.stop();
       case 'listen':
       case 'decode':
         // Handled where the socket is known.
@@ -144,6 +151,7 @@ export async function createHttpServer(
     ...decoder.getState(),
     recent: decoder.recent(),
     cw: decoder.recentCw(),
+    sending: sender.getState(),
   }));
   if (options.certificate) {
     const certificate = options.certificate;
@@ -216,6 +224,7 @@ export async function createHttpServer(
     send(socket, { type: 'scope', scope: scope.getState() });
     send(socket, { type: 'audio', audio: audio.getState() });
     send(socket, { type: 'decoder', decoder: decoder.getState() });
+    send(socket, { type: 'cwSending', sending: sender.getState() });
   });
 
   if (existsSync(join(webRoot, 'index.html'))) {

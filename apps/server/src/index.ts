@@ -5,6 +5,7 @@ import { loadCertificate } from './http/tls.ts';
 import { Audio, SimulatedAudioDevice } from './radio/audio/audio.ts';
 import { SdlAudioDevice } from './radio/audio/sdl.ts';
 import { SimulatedTransport } from './radio/cat/simulator.ts';
+import { CwSender } from './radio/cw/sender.ts';
 import { Decoder } from './radio/digi/decoder.ts';
 import { Ft8tsEngine } from './radio/digi/engine.ts';
 import { Radio } from './radio/radio.ts';
@@ -81,6 +82,8 @@ const decoder = new Decoder(audio, new Ft8tsEngine(config.decodeDepth), {
     };
   },
 });
+// Typed Morse goes out through one of the radio's CW memories, played by its keyer.
+const sender = new CwSender(radio, config.cwMemory);
 if (config.txEnabled) console.log('[radio] transmit controls are enabled (RADIOBENCH_TX=on)');
 
 const logRadio = changeLogger('radio');
@@ -105,7 +108,7 @@ const certificate = config.https.enabled ? await loadCertificate(config.https.ce
 if (certificate?.created) {
   console.log(`[https] made a new certificate in ${config.https.certDir}: ${certificate.reason}`);
 }
-const app = await createHttpServer(radio, scope, audio, decoder, webRoot, {
+const app = await createHttpServer(radio, scope, audio, decoder, sender, webRoot, {
   certificate: certificate?.cert,
 });
 try {
@@ -124,7 +127,7 @@ for (const url of listenUrls('http', config.http.host, config.http.port)) {
 
 let secureApp: Awaited<ReturnType<typeof createHttpServer>> | null = null;
 if (certificate) {
-  secureApp = await createHttpServer(radio, scope, audio, decoder, webRoot, {
+  secureApp = await createHttpServer(radio, scope, audio, decoder, sender, webRoot, {
     https: { key: certificate.key, cert: certificate.cert },
     certificate: certificate.cert,
   });
