@@ -195,9 +195,9 @@ filter keeps other signals out. In any other mode it looks for the strongest key
 between 400 and 1000 Hz itself. It follows the sender's speed from the keying (a sudden
 doubling costs it the first character), reads prosigns as `<SK>`, `<AS>` and the like, and
 shows `¿` for a character it cannot make out. It is a tone-and-timing decoder of the usual
-kind: fine for clean, machine-sent or steady hand-sent code at a fair signal strength, and no
-match for an experienced ear on a weak or ragged signal. "Clear" empties the text in this
-browser.
+kind: it reads a beacon 20 dB over the noise without a slip, and clean or steady hand-sent
+code at a fair signal strength, but is no match for an experienced ear on a weak or ragged
+signal. "Clear" empties the text in this browser.
 
 Under the text is a line to **send** Morse: type and press SEND (or Enter), and the radio's
 own keyer sends it at the speed chosen beside it, which is the radio's keyer speed. The FT-710

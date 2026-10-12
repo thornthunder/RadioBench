@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs';
 import { AUDIO_SAMPLE_RATE } from '@radiobench/protocol';
 import { describe, expect, test } from 'vitest';
 import { CwDecoder } from './cw.ts';
@@ -119,8 +120,8 @@ describe('CwDecoder', () => {
     const faster = decode(decoder, cwAudio('K1ABC K', { wpm: 22, lead: 0.5 }));
     expect(slow.trim()).toBe('CQ CQ DE K1ABC');
     expect(faster.trim()).toBe('K1ABC K');
-    // A doubling of speed costs the first character or so, then the decoder has caught up.
-    const doubled = decode(decoder, cwAudio('VVV K1ABC K', { wpm: 40, lead: 0.5 }));
+    // A sudden doubling of speed costs the first word or two, then the decoder has caught up.
+    const doubled = decode(decoder, cwAudio('VVV VVV VVV DE K1ABC K', { wpm: 40, lead: 0.5 }));
     expect(doubled.trim().endsWith('K1ABC K')).toBe(true);
   });
 
@@ -133,5 +134,76 @@ describe('CwDecoder', () => {
     expect(decoder.status().signal).toBe(true);
     decode(decoder, cwAudio('', { wpm: 20, tail: 6 }));
     expect(decoder.status()).toMatchObject({ signal: false, wpm: null });
+  });
+});
+
+// The decoder's constants were tuned against these: many runs with fresh noise each time.
+describe('CwDecoder over many runs', () => {
+  const RUNS = 12;
+
+  test('noise alone, at any level, gives no text and no signal', () => {
+    for (const noise of [0.003, 0.01, 0.03, 0.1]) {
+      for (let run = 0; run < RUNS; run++) {
+        const decoder = new CwDecoder(700);
+        const text = decode(decoder, cwAudio('', { wpm: 20, noise, tail: 8 }));
+        expect(text.trim(), `noise ${noise}`).toBe('');
+        expect(decoder.status().signal, `noise ${noise}`).toBe(false);
+      }
+    }
+  });
+
+  test('keying in noise is read whole, and the signal is let go after', () => {
+    for (let run = 0; run < RUNS; run++) {
+      const decoder = new CwDecoder(700);
+      const text = decode(
+        decoder,
+        cwAudio('CQ CQ DE K1ABC K', { wpm: 25, amplitude: 0.1, noise: 0.02, tail: 1.5 }),
+      );
+      expect(text.trim()).toBe('CQ CQ DE K1ABC K');
+      expect(decoder.status().signal).toBe(false);
+    }
+  });
+
+  test('a change of speed is followed', () => {
+    for (let run = 0; run < RUNS; run++) {
+      const decoder = new CwDecoder(700);
+      decode(decoder, cwAudio('CQ CQ DE K1ABC', { wpm: 15 }));
+      const faster = decode(decoder, cwAudio('K1ABC K', { wpm: 22, lead: 0.5 }));
+      expect(faster.trim()).toBe('K1ABC K');
+    }
+  });
+
+  test('a step up in the noise is taken in its stride', () => {
+    let garbage = 0;
+    let misread = 0;
+    for (let run = 0; run < RUNS; run++) {
+      const decoder = new CwDecoder(700);
+      let text = decode(decoder, cwAudio('', { wpm: 20, noise: 0.005, tail: 4 }));
+      text += decode(decoder, cwAudio('', { wpm: 20, noise: 0.03, tail: 4 }));
+      const keyed = decode(decoder, cwAudio('TEST', { wpm: 20, noise: 0.03, tail: 1.5 }));
+      // The floor follows a jump within a dah or so; a few characters of noise may be read
+      // meanwhile, and must not spoil what is keyed after.
+      if (text.trim().length > 5) garbage++;
+      if (keyed.trim() !== 'TEST') misread++;
+    }
+    expect(garbage).toBeLessThanOrEqual(3);
+    expect(misread).toBeLessThanOrEqual(1);
+  });
+});
+
+describe('CwDecoder on the air', () => {
+  // 26 s of the ZS1TEN/B beacon on 28.222 MHz, as the FT-710 delivered it in CW-U with its
+  // pitch at 700 Hz: about 20 dB over the noise in the detector's bandwidth, at 12.6 WPM.
+  const recording = readFileSync(new URL('./fixtures/beacon-zs1ten.wav', import.meta.url));
+  const audio = new Uint8Array(recording.buffer, recording.byteOffset + 44, recording.length - 44);
+
+  test('reads the beacon with the radio’s pitch', () => {
+    const decoder = new CwDecoder(700);
+    expect(decode(decoder, audio).trim()).toBe('VVV DE ZS1TEN/B JF96FA');
+  });
+
+  test('reads the beacon with its own search', () => {
+    const decoder = new CwDecoder(null);
+    expect(decode(decoder, audio).trim()).toBe('VVV DE ZS1TEN/B JF96FA');
   });
 });

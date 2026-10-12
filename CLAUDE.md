@@ -82,9 +82,13 @@ npm run package     # the installer in release/dist
   and peak taken from sliding windows (a low percentile and a maximum; exponential trackers
   were tried and let noise through while they settled), keying judged on the raw block with
   a two-block debounce, and a warm-up of four marks before dits are told from dahs. Its tests
-  synthesize keying with noise; the constants in `cw.ts` were tuned against them and against
-  loops of noise alone, keying then silence, and a step in the noise, so change them with
-  those in hand. The simulated audio device keys a CW station on 600 Hz.
+  synthesize keying with noise, and `fixtures/beacon-zs1ten.wav` is 26 s of a real beacon
+  (28.222 MHz, ~20 dB over the noise, 12.6 WPM) that must decode whole. The constants in
+  `cw.ts` were tuned against all of these and against loops of noise alone, keying then
+  silence, a step in the noise and a change of speed, so change them with those in hand. The
+  level is averaged over a quarter of a dit once the speed is known, which is what made the
+  beacon readable; the floor window is three seconds so that a slow sender's run of dahs does
+  not raise it. The simulated audio device keys a CW station on 600 Hz.
 - Morse is sent (`radio/cw/sender.ts`) the only way the FT-710 allows from a PC: the text is
   stored in a CW memory (`RADIOBENCH_CW_MEMORY`, 5 by default) and played with `KY0n`, in
   chunks of 50, and the memory's own text is put back afterwards. Keying over the Standard
