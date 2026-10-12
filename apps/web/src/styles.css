@@ -1620,7 +1620,7 @@ button.jack:disabled {
 }
 
 .cw-speed,
-.cw-breakin {
+.cw-practice {
   display: inline-flex;
   align-items: center;
   gap: 0.35rem;

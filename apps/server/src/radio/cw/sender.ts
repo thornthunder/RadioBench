@@ -2,8 +2,6 @@ import { CW_MESSAGE_LENGTH, type CwSending } from '@radiobench/protocol';
 import type { Radio } from '../radio.ts';
 import { ditMs, keying } from './morse.ts';
 
-/** How long after a chunk should have ended the radio is still given to finish it. */
-const OVERRUN_MS = 3000;
 /** How often the radio's state is looked at while a chunk is being keyed. */
 const POLL_MS = 100;
 /** The keyer's speed to assume when the radio has not said. */
@@ -14,8 +12,9 @@ type StateListener = (sending: CwSending | null) => void;
 /**
  * Sends text in Morse with the radio's own keyer. The FT-710 keys from a PC only through its
  * CW memories, so the text goes into one of them, chunk by chunk, and is played from there;
- * whatever the owner kept in that memory is put back afterwards. With break-in on, the radio
- * transmits what it keys; with it off, it sounds the sidetone only.
+ * whatever the owner kept in that memory is put back afterwards. The keyer alone only sounds
+ * the sidetone, so the transmitter is keyed with MOX for as long as the text plays, unless the
+ * sending is for practice.
  */
 export class CwSender {
   private readonly radio: Radio;
@@ -40,7 +39,7 @@ export class CwSender {
   }
 
   /** Sends the text; resolves when it has been keyed, or stopped. */
-  async send(text: string): Promise<void> {
+  async send(text: string, practice = false): Promise<void> {
     if (this.sending) throw new Error('Morse is already being sent');
     const state = this.radio.getState();
     if (!state.modeMain?.startsWith('CW')) {
@@ -50,6 +49,7 @@ export class CwSender {
     const chunks = chunk(clean);
     this.stopped = false;
     this.update({ text: clean, sent: 0 });
+    let keyed = false;
     try {
       // The owner's text in the scratch memory, to be put back.
       const original = (await this.radio.listMessages())[this.memory - 1] ?? '';
@@ -59,6 +59,12 @@ export class CwSender {
         if (this.stopped) break;
         await this.radio.storeMessage(this.memory, piece);
         last = piece;
+        // MOX before every chunk: the first keys the transmitter, the rest keep the server's
+        // MOX watchdog from letting go of it during a long text.
+        if (!practice) {
+          await this.radio.set('mox', true);
+          keyed = true;
+        }
         await this.radio.playMessage(this.memory);
         await this.waitForKeying(piece);
         sent += piece.length + 1;
@@ -67,28 +73,26 @@ export class CwSender {
       if (original !== '' && original !== last)
         await this.radio.storeMessage(this.memory, original);
     } finally {
+      if (keyed) await this.radio.set('mox', false).catch(() => undefined);
       this.update(null);
     }
   }
 
-  /** Stops what is being sent; the radio stops keying at once. */
+  /** Stops what is being sent; the radio stops keying at once and the transmitter is let go. */
   async stop(): Promise<void> {
     if (!this.sending) return;
     this.stopped = true;
     await this.radio.playMessage(0);
   }
 
-  /** Waits for the radio to key a chunk: as long as it should take, and then while it still transmits. */
+  /** Waits as long as the keyer should take over a chunk, as the radio's state cannot tell. */
   private async waitForKeying(piece: string): Promise<void> {
     const dit = ditMs(this.radio.getState().keySpeed ?? DEFAULT_WPM);
     // The keyer ends a memory with a word space; a little slack covers the command itself.
     const dits = keying(piece).reduce((sum, element) => sum + element.dits, 0) + 7;
     const expected = dits * dit + 400;
     const started = Date.now();
-    while (!this.stopped) {
-      const elapsed = Date.now() - started;
-      if (elapsed >= expected && !this.radio.getState().transmitting) return;
-      if (elapsed >= expected + OVERRUN_MS) return;
+    while (!this.stopped && Date.now() - started < expected) {
       await new Promise((resolve) => setTimeout(resolve, POLL_MS));
     }
   }

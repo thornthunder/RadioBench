@@ -203,10 +203,12 @@ Under the text is a line to **send** Morse: type and press SEND (or Enter), and 
 own keyer sends it at the speed chosen beside it, which is the radio's keyer speed. The FT-710
 keys from a PC only through its CW memories, so the text goes into one of them (memory 5
 unless `RADIOBENCH_CW_MEMORY` says otherwise), fifty characters at a time, and whatever that
-memory held is put back afterwards. With BK-IN on the radio transmits what it keys; with it
-off it sounds the sidetone only, which makes a practice mode. The radio has to be in a CW mode,
-and the server's transmit controls have to be on (see Transmitting). STOP cuts a transmission
-short. Letters, digits and the usual punctuation can be sent; prosigns cannot.
+memory held is put back afterwards. The keyer alone only sounds the sidetone, so RadioBench
+keys the transmitter with MOX for as long as the text plays and lets go of it after; tick
+"Practice" to hear the text on the sidetone without transmitting. The radio has to be in a CW
+mode, and for anything but practice the server's transmit controls have to be on (see
+Transmitting). STOP cuts a transmission short. Letters, digits and the usual punctuation can be
+sent; prosigns cannot.
 
 For FT8 and FT4, "Tune to…" puts the
 radio on a band's usual frequency in DATA-U. Each slot (15 s for FT8, 7.5 s for FT4, cut by the

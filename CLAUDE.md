@@ -91,7 +91,9 @@ npm run package     # the installer in release/dist
   not raise it. The simulated audio device keys a CW station on 600 Hz.
 - Morse is sent (`radio/cw/sender.ts`) the only way the FT-710 allows from a PC: the text is
   stored in a CW memory (`RADIOBENCH_CW_MEMORY`, 5 by default) and played with `KY0n`, in
-  chunks of 50, and the memory's own text is put back afterwards. Keying over the Standard
+  chunks of 50, and the memory's own text is put back afterwards. The keyer alone only sounds
+  the sidetone (break-in or not, as the user found), so the sender keys MOX around each chunk,
+  which also keeps the MOX watchdog fed; "practice" skips MOX. Keying over the Standard
   COM port's DTR line would be the real thing, but opening that port asserts the lines, which
   keys the transmitter; it stays off limits. The simulator plays memories for as long as
   their keying takes, on the air when break-in is on.

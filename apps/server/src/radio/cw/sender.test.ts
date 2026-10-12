@@ -11,7 +11,7 @@ afterEach(async () => {
   current = undefined;
 });
 
-/** A simulated radio, read once, in CW at a brisk speed with break-in on. */
+/** A simulated radio, read once, in CW at a brisk speed, break-in off as it comes. */
 async function cwRadio(txEnabled = true): Promise<Radio> {
   const radio = new Radio(SIM, { txEnabled });
   current = radio;
@@ -19,8 +19,7 @@ async function cwRadio(txEnabled = true): Promise<Radio> {
   await expect.poll(() => radio.getState().sMeter, { timeout: 5000 }).not.toBeNull();
   await radio.set('modeMain', 'CW-U');
   await radio.set('keySpeed', 60);
-  await radio.set('breakIn', true);
-  await expect.poll(() => radio.getState().breakIn).toBe(true);
+  await expect.poll(() => radio.getState().keySpeed).toBe(60);
   return radio;
 }
 
@@ -41,21 +40,36 @@ test('typed Morse goes out through the scratch memory, which gets its own text b
   sender.onState((sending) => states.push(sending && `${sending.sent}/${sending.text.length}`));
   expect((await radio.listMessages())[4]).toBe('R 5NN K');
 
-  let transmitted = false;
+  let keyed = false;
   const unwatch = radio.onState((state) => {
-    if (state.transmitting) transmitted = true;
+    if (state.mox && state.transmitting) keyed = true;
   });
   // Typed in lower case with a double space: sent as "CQ TEST DE K1ABC K", 18 characters.
   await sender.send('cq test de k1abc  k');
   unwatch();
-  expect(transmitted).toBe(true);
+  // The transmitter was keyed with MOX, break-in being off, and let go of after.
+  expect(keyed).toBe(true);
+  await expect.poll(() => radio.getState().mox).toBe(false);
   expect(sender.getState()).toBeNull();
   expect(states[0]).toBe('0/18');
   expect(states[states.length - 1]).toBeNull();
   expect(states).toContain('18/18');
   // The memory holds the owner's text again, and the radio is no longer transmitting.
   expect((await radio.listMessages())[4]).toBe('R 5NN K');
-  expect(radio.getState().transmitting).toBe(false);
+  await expect.poll(() => radio.getState().transmitting).toBe(false);
+}, 20_000);
+
+test('in practice the keyer sounds the text without the transmitter', async () => {
+  const radio = await cwRadio();
+  const sender = new CwSender(radio, 5);
+  let transmitted = false;
+  const unwatch = radio.onState((state) => {
+    if (state.transmitting) transmitted = true;
+  });
+  await sender.send('TEST', true);
+  unwatch();
+  expect(transmitted).toBe(false);
+  await expect.poll(() => radio.getState().mox).toBe(false);
 }, 20_000);
 
 test('sending is refused outside the CW modes, while sending, and with transmit off', async () => {

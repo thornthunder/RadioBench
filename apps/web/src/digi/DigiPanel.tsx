@@ -150,29 +150,34 @@ const KEYER_SPEEDS = [10, 12, 14, 16, 18, 20, 22, 25, 28, 30, 35, 40];
 
 /**
  * A line to send in Morse with the radio's keyer: typed here, it goes through one of the
- * radio's CW memories and out on the air with break-in on, or to the sidetone alone without.
+ * radio's CW memories and out on the air, the transmitter keyed with MOX meanwhile; or, for
+ * practice, to the sidetone alone.
  */
 function CwSend() {
   const { state, cwSending, set, request } = useRadio();
   const [text, setText] = useState('');
+  const [practice, setPractice] = useState(false);
   const connected = state?.link === 'connected';
   const inCw = !!state?.modeMain?.startsWith('CW');
   const problem = !connected
     ? 'The radio cannot be reached'
-    : !state.txEnabled
+    : !practice && !state.txEnabled
       ? txOffMessage(state)
       : !inCw
         ? 'Put the radio in a CW mode to send'
         : null;
   const clean = text.toUpperCase().replace(/[^A-Z0-9 !"#$%&'()*+,\-./:<=>?@[\\\]^_]/g, '');
+  const send = () => {
+    if (problem || cwSending || clean.trim() === '') return;
+    request({ type: 'cwSend', text: clean.trim(), practice });
+  };
 
   return (
     <form
       className="cw-send"
       onSubmit={(event) => {
         event.preventDefault();
-        if (problem || cwSending || clean.trim() === '') return;
-        request({ type: 'cwSend', text: clean.trim() });
+        send();
       }}
     >
       <input
@@ -193,24 +198,22 @@ function CwSend() {
       ) : (
         <Key
           className="cw-send-key"
-          lit={inCw && state && !state.breakIn && clean.trim() !== '' ? 'orange' : false}
+          lit={practice && clean.trim() !== '' ? 'orange' : false}
           disabled={problem !== null || clean.trim() === ''}
           title={
             problem ??
-            (state?.breakIn
-              ? 'Sends the text with the radio’s keyer (Enter does too)'
-              : 'BK-IN is off: the radio will only sound its sidetone. Tick BK-IN to go on the air.')
+            (practice
+              ? 'Sounds the text on the radio’s sidetone without transmitting'
+              : 'Sends the text on the air with the radio’s keyer (Enter does too)')
           }
-          onPress={() => {
-            if (!problem && clean.trim() !== '') request({ type: 'cwSend', text: clean.trim() });
-          }}
+          onPress={send}
         >
           SEND
         </Key>
       )}
       {cwSending ? (
         <span className="cw-progress">
-          {state?.breakIn ? 'Sending' : 'Sounding, not on the air'} {cwSending.sent}/
+          {state?.mox ? 'Sending' : 'Sounding, not on the air'} {cwSending.sent}/
           {cwSending.text.length}
         </span>
       ) : null}
@@ -234,21 +237,15 @@ function CwSend() {
           ))}
         </select>
       </label>
-      <label className="cw-breakin">
+      <label className="cw-practice" title="Sidetone only: nothing goes on the air">
         <input
           type="checkbox"
-          checked={!!state?.breakIn}
-          disabled={!connected}
-          onChange={(event) => set('breakIn', event.target.checked)}
+          checked={practice}
+          disabled={cwSending !== null}
+          onChange={(event) => setPractice(event.target.checked)}
         />
-        BK-IN
+        Practice
       </label>
-      {inCw && state && !state.breakIn ? (
-        <p className="cw-send-note">
-          BK-IN is off: the radio sounds its sidetone only, for practice, and nothing goes on the
-          air. Tick BK-IN to transmit.
-        </p>
-      ) : null}
     </form>
   );
 }

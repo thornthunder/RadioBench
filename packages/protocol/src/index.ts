@@ -249,8 +249,9 @@ export type ClientMessage =
   | { type: 'listen'; on: boolean }
   // Start or stop receiving decodes; the mode, when given, is switched for everyone.
   | { type: 'decode'; on: boolean; mode?: MonitorMode }
-  // Sends text in Morse with the radio's keyer, through one of its CW memories.
-  | { type: 'cwSend'; text: string }
+  // Sends text in Morse with the radio's keyer, through one of its CW memories, keying the
+  // transmitter with MOX meanwhile; in practice the radio only sounds its sidetone.
+  | { type: 'cwSend'; text: string; practice?: boolean }
   | { type: 'cwStop' }
   | { type: 'menuRead'; ids: string[] }
   // The value is an option's position, a number or text, as the menu item calls for.
@@ -405,7 +406,13 @@ export function parseClientMessage(raw: string): ClientMessage | null {
     case 'cwStop':
       return { type: message.type };
     case 'cwSend':
-      return isCwSendText(message.text) ? { type: 'cwSend', text: message.text } : null;
+      if (!isCwSendText(message.text)) return null;
+      if (message.practice !== undefined && typeof message.practice !== 'boolean') return null;
+      return {
+        type: 'cwSend',
+        text: message.text,
+        ...(message.practice === undefined ? {} : { practice: message.practice }),
+      };
     case 'memoryRecall':
     case 'memoryStore':
       return isChannel(message.channel) ? { type: message.type, channel: message.channel } : null;

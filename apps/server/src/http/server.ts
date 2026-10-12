@@ -134,7 +134,7 @@ export async function createHttpServer(
       case 'power':
         return radio.power(message.on);
       case 'cwSend':
-        return sender.send(message.text);
+        return sender.send(message.text, message.practice ?? false);
       case 'cwStop':
         return sender.stop();
       case 'listen':
