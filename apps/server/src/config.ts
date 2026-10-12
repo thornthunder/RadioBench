@@ -54,6 +54,8 @@ export interface Config {
   cwMemory: number;
   /** Whether clients may key the transmitter: MOX, VOX and antenna tuning. */
   txEnabled: boolean;
+  /** Where that is switched on, worded for the user. */
+  txSwitch: string;
 }
 
 function switchSetting(env: NodeJS.ProcessEnv, name: string, fallback: 'on' | 'off'): boolean {
@@ -104,6 +106,11 @@ export function loadConfig(argv = process.argv.slice(2), env = process.env): Con
       output: env.RADIOBENCH_AUDIO_OUT || 'USB Audio Device',
     },
     txEnabled: switchSetting(env, 'RADIOBENCH_TX', 'off'),
+    // The desktop application sets RADIOBENCH_TX from its own settings, and says so.
+    txSwitch:
+      env.RADIOBENCH_DESKTOP === 'on'
+        ? '"Allow transmitting" in the tray menu'
+        : 'RADIOBENCH_TX=on in the server’s environment or .env file',
     http: {
       host: env.RADIOBENCH_HTTP_HOST || '0.0.0.0',
       port: integer(env, 'RADIOBENCH_HTTP_PORT', DEFAULT_HTTP_PORT),

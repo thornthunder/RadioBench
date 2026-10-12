@@ -225,9 +225,10 @@ given to others.
 
 ## Transmitting
 
-Everything that puts the radio on the air is refused unless the server is started with
-`RADIOBENCH_TX=on`: MOX, VOX, antenna tuning, sending a CW text or voice memory, typed Morse,
-and microphone audio. It is off by default because none of it has been tried on a real radio yet.
+Everything that puts the radio on the air is refused unless transmitting is switched on: MOX,
+VOX, antenna tuning, sending a CW text or voice memory, typed Morse, and microphone audio. In
+the installed application the switch is "Allow transmitting" in the tray menu (`allowTransmit`
+in its settings file); run from source, it is `RADIOBENCH_TX=on`. It is off by default because none of it has been tried on a real radio yet.
 With it on, the server releases MOX by itself when the browser that switched it on
 disconnects, after three minutes, and when the server stops.
 

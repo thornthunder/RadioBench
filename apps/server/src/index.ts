@@ -66,6 +66,7 @@ const config = loadConfig();
 const simulator = new SimulatedTransport();
 const radio = new Radio(config.cat, {
   txEnabled: config.txEnabled,
+  txSwitch: config.txSwitch,
   ...(config.cat.port === SIM_PORT ? { createTransport: () => simulator } : {}),
 });
 const scope = createScope(config.scope, radio);

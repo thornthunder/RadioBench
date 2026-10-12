@@ -56,8 +56,10 @@ const PAUSE = Symbol('pause');
 /** Settings whose change brings other settings with it: each mode and VFO keeps its own. */
 const RESHAPING: ReadonlySet<SettingKey> = new Set(['modeMain', 'modeSub', 'mainVfo']);
 
-const TX_SWITCHED_OFF =
-  'Transmit controls are switched off on the server. Set RADIOBENCH_TX=on to enable them.';
+/** What a client is told when it asks for a transmit control that the server has off. */
+function txSwitchedOff(txSwitch: string): string {
+  return `Transmitting is switched off on the server: switch it on with ${txSwitch}`;
+}
 const REFUSED = 'The radio did not accept that. It may not apply in the present mode.';
 const NOT_CONNECTED = 'The radio is not connected';
 
@@ -132,7 +134,7 @@ function unknownSettings(): Settings {
 }
 
 /** Everything read from the radio, as it is before anything has been read. */
-function nothingRead(): Omit<RadioState, 'link' | 'linkError' | 'port' | 'txEnabled'> {
+function nothingRead(): Omit<RadioState, 'link' | 'linkError' | 'port' | 'txEnabled' | 'txSwitch'> {
   return {
     ...unknownSettings(),
     transmitting: false,
@@ -189,7 +191,13 @@ export class Radio {
 
   constructor(
     config: CatConfig,
-    options: { txEnabled?: boolean; maxMoxMs?: number; createTransport?: TransportFactory } = {},
+    options: {
+      txEnabled?: boolean;
+      /** Where transmitting is switched on, worded for the user. */
+      txSwitch?: string;
+      maxMoxMs?: number;
+      createTransport?: TransportFactory;
+    } = {},
   ) {
     this.config = config;
     this.createTransport = options.createTransport ?? openTransport;
@@ -199,6 +207,7 @@ export class Radio {
       linkError: null,
       port: null,
       txEnabled: options.txEnabled ?? false,
+      txSwitch: options.txSwitch ?? 'RADIOBENCH_TX=on',
       ...nothingRead(),
     };
   }
@@ -229,7 +238,7 @@ export class Radio {
   /** Gives a setting a new value. Resolves once the radio has taken it. */
   set<K extends SettingKey>(key: K, value: SettingValue<K>): Promise<void> {
     if (keysTransmitter(key, value) && !this.state.txEnabled) {
-      return Promise.reject(new Error(TX_SWITCHED_OFF));
+      return Promise.reject(new Error(txSwitchedOff(this.state.txSwitch)));
     }
     return this.enqueue((done) => {
       // Turning a knob sends values faster than the radio takes them: only the latest counts.
@@ -246,7 +255,7 @@ export class Radio {
   /** Has the radio do something once, such as changing band. */
   act(action: Action, value = 0): Promise<void> {
     if (TRANSMITTING_ACTIONS.includes(action) && !this.state.txEnabled) {
-      return Promise.reject(new Error(TX_SWITCHED_OFF));
+      return Promise.reject(new Error(txSwitchedOff(this.state.txSwitch)));
     }
     return this.enqueue((done) => ({ kind: 'action', action, value, ...done }));
   }
@@ -473,13 +482,17 @@ export class Radio {
 
   /** Sends a CW text memory on the air; 0 stops one that is being sent. */
   playMessage(number: number): Promise<void> {
-    if (number > 0 && !this.state.txEnabled) return Promise.reject(new Error(TX_SWITCHED_OFF));
+    if (number > 0 && !this.state.txEnabled) {
+      return Promise.reject(new Error(txSwitchedOff(this.state.txSwitch)));
+    }
     return this.task((client) => client.set(`KY0${number}`));
   }
 
   /** Plays a voice memory on the air; 0 stops one that is playing. */
   playVoice(number: number): Promise<void> {
-    if (number > 0 && !this.state.txEnabled) return Promise.reject(new Error(TX_SWITCHED_OFF));
+    if (number > 0 && !this.state.txEnabled) {
+      return Promise.reject(new Error(txSwitchedOff(this.state.txSwitch)));
+    }
     return this.task((client) => client.set(`PB0${number}`));
   }
 

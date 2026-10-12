@@ -23,6 +23,7 @@ import {
   unlockOutputs,
   type OutputDevice,
 } from './lib/sound.ts';
+import { txOffMessage } from './lib/controls.ts';
 import { remember, remembered } from './lib/storage.ts';
 import { useRadio } from './radio.tsx';
 
@@ -258,7 +259,7 @@ export function UiProvider({ children }: { children: ReactNode }) {
   const talkProblem = !audio
     ? 'The server cannot be reached'
     : !state?.txEnabled || !audio.canTalk
-      ? 'Transmit controls are switched off on the server (RADIOBENCH_TX)'
+      ? txOffMessage(state)
       : !microphoneAllowed()
         ? 'Browsers only allow the microphone over https: open the https address the server prints'
         : micError;

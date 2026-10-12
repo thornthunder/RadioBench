@@ -40,6 +40,8 @@ export interface RadioState extends Settings {
   port: string | null;
   /** Whether the server lets clients key the transmitter; see RADIOBENCH_TX. */
   txEnabled: boolean;
+  /** Where that is switched on, worded for the user: the tray menu, or the environment. */
+  txSwitch: string;
 
   transmitting: boolean;
   /** The antenna system looks wrong to the radio; it shows HI-SWR. */

@@ -90,6 +90,8 @@ export function serverEnvironment(settings: Settings, paths: ServerPaths): Recor
     RADIOBENCH_HTTPS: 'on',
     RADIOBENCH_HTTPS_PORT: String(settings.httpsPort),
     RADIOBENCH_TX: settings.allowTransmit ? 'on' : 'off',
+    // So that the server tells users about the tray menu rather than about variables.
+    RADIOBENCH_DESKTOP: 'on',
     RADIOBENCH_SCOPE: settings.scope ? 'on' : 'off',
     RADIOBENCH_AUDIO: settings.audio ? 'on' : 'off',
     RADIOBENCH_DECODE_DEPTH: String(settings.decodeDepth),

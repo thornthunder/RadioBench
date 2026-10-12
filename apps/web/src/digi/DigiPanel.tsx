@@ -9,7 +9,7 @@ import {
   type RadioState,
 } from '@radiobench/protocol';
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { formatFrequency, mainFrequencyKey } from '../lib/controls.ts';
+import { formatFrequency, mainFrequencyKey, txOffMessage } from '../lib/controls.ts';
 import { Key } from '../panel/Key.tsx';
 import { useRadio } from '../radio.tsx';
 import { useUi } from '../ui.tsx';
@@ -160,7 +160,7 @@ function CwSend() {
   const problem = !connected
     ? 'The radio cannot be reached'
     : !state.txEnabled
-      ? 'Transmit controls are switched off on the server (RADIOBENCH_TX)'
+      ? txOffMessage(state)
       : !inCw
         ? 'Put the radio in a CW mode to send'
         : null;

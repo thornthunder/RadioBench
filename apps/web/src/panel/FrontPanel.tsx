@@ -4,6 +4,7 @@ import {
   FUNC_TARGETS,
   dialStepHz,
   mainFrequencyKey,
+  txOffMessage,
   useNudge,
 } from '../lib/controls.ts';
 import { useRadio } from '../radio.tsx';
@@ -26,7 +27,7 @@ export function LeftKeys() {
   const { state, audio, set, act } = useRadio();
   const ui = useUi();
   const off = state?.link !== 'connected';
-  const noTx = 'Transmit controls are switched off on the server (RADIOBENCH_TX)';
+  const noTx = txOffMessage(state);
   const txOff = !state?.txEnabled;
 
   return (

@@ -79,6 +79,11 @@ export function useNudge(): (key: SettingKey, amount: number) => void {
 }
 
 /** The frequency setting of the main VFO, the one the dial tunes. */
+/** Why a transmit control cannot be used: the server has them off, and here is the switch. */
+export function txOffMessage(state: RadioState | null): string {
+  return `Transmitting is switched off on the server: switch it on with ${state?.txSwitch ?? 'RADIOBENCH_TX'}`;
+}
+
 export function mainFrequencyKey(state: RadioState): 'frequencyA' | 'frequencyB' {
   return state.mainVfo === 'B' ? 'frequencyB' : 'frequencyA';
 }
