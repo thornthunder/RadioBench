@@ -193,8 +193,14 @@ function CwSend() {
       ) : (
         <Key
           className="cw-send-key"
+          lit={inCw && state && !state.breakIn && clean.trim() !== '' ? 'orange' : false}
           disabled={problem !== null || clean.trim() === ''}
-          title={problem ?? 'Sends the text with the radio’s keyer (Enter does too)'}
+          title={
+            problem ??
+            (state?.breakIn
+              ? 'Sends the text with the radio’s keyer (Enter does too)'
+              : 'BK-IN is off: the radio will only sound its sidetone. Tick BK-IN to go on the air.')
+          }
           onPress={() => {
             if (!problem && clean.trim() !== '') request({ type: 'cwSend', text: clean.trim() });
           }}
@@ -204,7 +210,8 @@ function CwSend() {
       )}
       {cwSending ? (
         <span className="cw-progress">
-          Sending {cwSending.sent}/{cwSending.text.length}
+          {state?.breakIn ? 'Sending' : 'Sounding, not on the air'} {cwSending.sent}/
+          {cwSending.text.length}
         </span>
       ) : null}
       <label className="cw-speed">
@@ -238,8 +245,8 @@ function CwSend() {
       </label>
       {inCw && state && !state.breakIn ? (
         <p className="cw-send-note">
-          With BK-IN off the radio keys its sidetone only, for practice; switch it on to go on the
-          air.
+          BK-IN is off: the radio sounds its sidetone only, for practice, and nothing goes on the
+          air. Tick BK-IN to transmit.
         </p>
       ) : null}
     </form>
