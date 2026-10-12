@@ -1,5 +1,6 @@
 import { AUDIO_SAMPLE_RATE, type AudioState, type DigiMode } from '@radiobench/protocol';
 import { expect, test } from 'vitest';
+import { ditMs, keying } from '../cw/morse.ts';
 import { Decoder, type AudioSource, type DecodeEngine } from './decoder.ts';
 
 /** An audio source fed by hand. */
@@ -69,7 +70,7 @@ function setUp(mode: DigiMode = 'FT8') {
   const decoder = new Decoder(source, engine, {
     mode,
     now: time.now,
-    dial: () => ({ hz: 14_074_000, mode: 'DATA-U' }),
+    dial: () => ({ hz: 14_074_000, mode: 'DATA-U', cwPitchHz: null }),
   });
   return { source, engine, time, decoder };
 }
@@ -160,9 +161,51 @@ test('the decoder is as available as the audio, and stopping ends the engine', (
 test('without audio the decoder is off and stays off', () => {
   const source = new FakeSource();
   source.state = { status: 'off', detail: null, canTalk: false, talking: false };
-  const decoder = new Decoder(source, new FakeEngine(), { dial: () => ({ hz: null, mode: null }) });
+  const decoder = new Decoder(source, new FakeEngine(), {
+    dial: () => ({ hz: null, mode: null, cwPitchHz: null }),
+  });
   expect(decoder.getState().status).toBe('off');
   decoder.use();
   expect(decoder.getState().status).toBe('off');
   expect(source.listeners.size).toBe(0);
+});
+
+test('in CW mode the audio is read as Morse as it comes, and clients get the recent text', async () => {
+  const { source, engine, time, decoder } = setUp();
+  const events: { text: string; wpm: number | null }[] = [];
+  decoder.onCw((event) => events.push({ text: event.text, wpm: event.cw.wpm }));
+  decoder.use();
+  decoder.setMode('CW');
+  expect(decoder.getState().mode).toBe('CW');
+
+  // "CQ" keyed at 20 words per minute on 700 Hz, then silence, in 20 ms chunks.
+  const dit = ditMs(20);
+  const samples: number[] = [];
+  const noise = () => Math.round(300 * (Math.random() * 2 - 1));
+  for (let i = 0; i < 0.5 * AUDIO_SAMPLE_RATE; i++) samples.push(noise());
+  for (const element of keying('CQ')) {
+    const count = Math.round((element.dits * dit * AUDIO_SAMPLE_RATE) / 1000);
+    for (let i = 0; i < count; i++) {
+      const tone = element.on
+        ? 8000 * Math.sin((2 * Math.PI * 700 * samples.length) / AUDIO_SAMPLE_RATE)
+        : 0;
+      samples.push(Math.round(tone) + noise());
+    }
+  }
+  for (let i = 0; i < 1.5 * AUDIO_SAMPLE_RATE; i++) samples.push(noise());
+  for (let at = 0; at < samples.length; at += CHUNK_SAMPLES) {
+    const chunk = Buffer.alloc(CHUNK_SAMPLES * 2);
+    for (let i = 0; i < CHUNK_SAMPLES; i++) chunk.writeInt16LE(samples[at + i] ?? 0, i * 2);
+    for (const listener of source.listeners) listener(chunk);
+    time.advance(CHUNK_MS);
+  }
+
+  const text = events.map((event) => event.text).join('');
+  expect(text.trim()).toBe('CQ');
+  expect(events.some((event) => event.wpm !== null && event.wpm >= 18 && event.wpm <= 22)).toBe(
+    true,
+  );
+  expect(decoder.recentCw().text.trim()).toBe('CQ');
+  // Nothing was cut into slots meanwhile.
+  expect(engine.calls).toHaveLength(0);
 });

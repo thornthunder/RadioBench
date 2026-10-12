@@ -1,4 +1,5 @@
 import {
+  CW_TEXT_KEPT,
   DIGI_BATCHES_KEPT,
   RX_AUDIO_KIND,
   TX_AUDIO_KIND,
@@ -9,6 +10,7 @@ import {
   type Action,
   type AudioState,
   type ClientMessage,
+  type CwState,
   type DecodeBatch,
   type DecoderState,
   type MemoryChannel,
@@ -47,6 +49,10 @@ export interface RadioApi {
   decoder: DecoderState | null;
   /** Decodes of the last slots, oldest first, once they have been asked for. */
   decodes: DecodeBatch[];
+  /** The Morse decoded lately, and how the decoding is going; null until asked for. */
+  cw: { text: string; state: CwState } | null;
+  /** Empties the Morse text shown in this browser. */
+  clearCw(): void;
   /** Menu values read so far: the characters of the radio's reply, by menu item id. */
   menu: Record<string, string>;
   /** The memory channels in use; null until they have been asked for. */
@@ -79,6 +85,7 @@ export function RadioProvider({ children }: { children: ReactNode }) {
   const [audio, setAudio] = useState<AudioState | null>(null);
   const [decoder, setDecoder] = useState<DecoderState | null>(null);
   const [decodes, setDecodes] = useState<DecodeBatch[]>([]);
+  const [cw, setCw] = useState<{ text: string; state: CwState } | null>(null);
   const [menu, setMenu] = useState<Record<string, string>>({});
   const [memories, setMemories] = useState<MemoryChannel[] | null>(null);
   const [messages, setMessages] = useState<string[] | null>(null);
@@ -115,6 +122,13 @@ export function RadioProvider({ children }: { children: ReactNode }) {
               .sort((a, b) => a.slotStart - b.slotStart)
               .slice(-DIGI_BATCHES_KEPT);
           });
+        case 'cw':
+          return setCw((current) => ({
+            text: (message.append ? (current?.text ?? '') + message.text : message.text).slice(
+              -CW_TEXT_KEPT,
+            ),
+            state: message.cw,
+          }));
         case 'menu':
           return setMenu((current) => ({ ...current, ...message.values }));
         case 'memories':
@@ -190,6 +204,9 @@ export function RadioProvider({ children }: { children: ReactNode }) {
       scopeListeners.current.delete(listener);
     };
   }, []);
+  const clearCw = useCallback(() => {
+    setCw((current) => (current ? { ...current, text: '' } : current));
+  }, []);
   const subscribeAudio = useCallback<RadioApi['subscribeAudio']>((listener) => {
     audioListeners.current.add(listener);
     return () => {
@@ -211,6 +228,8 @@ export function RadioProvider({ children }: { children: ReactNode }) {
       audio,
       decoder,
       decodes,
+      cw,
+      clearCw,
       menu,
       memories,
       messages,
@@ -228,6 +247,8 @@ export function RadioProvider({ children }: { children: ReactNode }) {
       audio,
       decoder,
       decodes,
+      cw,
+      clearCw,
       menu,
       memories,
       messages,

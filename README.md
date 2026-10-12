@@ -54,8 +54,8 @@ Working, and checked against a real FT-710 (firmware 01-12):
 - Shows the radio's own spectrum scope, about 30 sweeps a second, as trace and waterfall or as
   a 3DSS picture, with the audio oscilloscope and audio spectrum of the MULTI view
 - Plays the radio's received audio in the browser
-- Decodes FT8 and FT4 from the received audio and lists them under the panel (checked with
-  signals made up on the PC; see the FT8/FT4 monitor below)
+- Decodes FT8, FT4 and Morse from the received audio under the panel (checked with signals
+  made up on the PC; see the monitor below)
 - Reads all 296 items of the setting menus, the memory channels and the CW text memories
 - The radio accepts RadioBench's commands for changing things: settings, menu items, memory
   channels, memory names and CW texts were each written back to it exactly as they were
@@ -182,10 +182,24 @@ The page works like the radio:
 The key lamps, the ring around the dial and the BUSY/TX lamp follow the radio. When the radio
 does not answer, the display says so and offers to switch it on.
 
-### The FT8/FT4 monitor
+### The FT8/FT4/CW monitor
 
 Under the radio sits a receive-only decoder for seeing who is on the band before starting
-WSJT-X for real. [DECODE] switches it on; [FT8] and [FT4] choose the mode; "Tune to…" puts the
+WSJT-X for real, or for reading Morse. [DECODE] switches it on; [FT8], [FT4] and [CW] choose
+the mode.
+
+In CW the decoded text streams across the box as it comes, with the sender's speed and the
+tone being decoded shown above it, and a cursor that lights while a keyed tone is heard. Put
+the radio in a CW mode: the decoder then sits on the radio's own CW pitch, and the narrow
+filter keeps other signals out. In any other mode it looks for the strongest keyed tone
+between 400 and 1000 Hz itself. It follows the sender's speed from the keying (a sudden
+doubling costs it the first character), reads prosigns as `<SK>`, `<AS>` and the like, and
+shows `¿` for a character it cannot make out. It is a tone-and-timing decoder of the usual
+kind: fine for clean, machine-sent or steady hand-sent code at a fair signal strength, and no
+match for an experienced ear on a weak or ragged signal. "Clear" empties the text in this
+browser.
+
+For FT8 and FT4, "Tune to…" puts the
 radio on a band's usual frequency in DATA-U. Each slot (15 s for FT8, 7.5 s for FT4, cut by the
 PC's clock from the top of the UTC minute, as WSJT-X does it) is listed with the time, the dial
 frequency and its decodes: UTC, signal-to-noise ratio in dB, the sender's clock offset DT in
@@ -282,6 +296,7 @@ apps/server/         Node.js server
   src/radio/scope/     Spectrum scope: FT4222 port, frame reader and parser, simulator
   src/radio/audio/     The radio's USB sound device, both ways
   src/radio/digi/      FT8/FT4 decoding: slots cut from the received audio, ft8ts in worker threads
+  src/radio/cw/        Morse decoding: tone detection, keying and timing, the code table
   src/radio/radio.ts   Connection upkeep, the command and polling loop, radio state
   src/http/            HTTP and HTTPS servers with the WebSocket, and the certificate
   certs/               The server's own certificate, made on first start (not in the repository)

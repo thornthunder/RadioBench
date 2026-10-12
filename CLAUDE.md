@@ -78,6 +78,13 @@ npm run package     # the installer in release/dist
   through `ft4-worker.ts`. Slots are cut by the wall clock (`Date.now()`), so the simulated
   audio device keeps to the wall clock too, and the decoder is tested with a clock of its own.
   ft8ts's encoder needs `samplesPerSymbol` for any rate other than 12 kHz.
+- Morse decoding (`radio/cw/`) is RadioBench's own: a Goertzel tone detector with the floor
+  and peak taken from sliding windows (a low percentile and a maximum; exponential trackers
+  were tried and let noise through while they settled), keying judged on the raw block with
+  a two-block debounce, and a warm-up of four marks before dits are told from dahs. Its tests
+  synthesize keying with noise; the constants in `cw.ts` were tuned against them and against
+  loops of noise alone, keying then silence, and a step in the noise, so change them with
+  those in hand. The simulated audio device keys a CW station on 600 Hz.
 - All CAT traffic goes through `CatClient`, one command at a time, and is scheduled by the one
   loop in `Radio`: waiting commands first, otherwise reads. State changes only through what the
   radio says (`decode`), apart from a setting being taken as set once the radio has accepted it.

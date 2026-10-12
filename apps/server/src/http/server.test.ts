@@ -47,7 +47,7 @@ async function serve(txEnabled: boolean): Promise<string> {
   sound = new SimulatedAudioDevice();
   audio = new Audio(sound, txEnabled);
   decoder = new Decoder(audio, new TestEngine(), {
-    dial: () => ({ hz: 14_074_000, mode: 'DATA-U' }),
+    dial: () => ({ hz: 14_074_000, mode: 'DATA-U', cwPitchHz: null }),
   });
   app = await createHttpServer(radio, new Scope(null), audio, decoder, 'no-web-client-here');
   await app.listen({ host: '127.0.0.1', port: 0 });

@@ -1537,3 +1537,52 @@ button.jack:disabled {
     display: none;
   }
 }
+
+/* The Morse view of the monitor: the text as it is decoded, with the speed and tone beside. */
+
+.cw-text {
+  min-height: 9rem;
+  max-height: 22rem;
+  margin: 0;
+  padding: 0.5rem 0.6rem;
+  color: #d9f5e3;
+  font-family: ui-monospace, Consolas, monospace;
+  font-size: 1rem;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.cw-text .digi-mine {
+  padding: 0 0.1em;
+  border-radius: 0.2em;
+  background: #3a1a1a;
+  color: #ffb3b3;
+}
+
+.cw-cursor {
+  display: inline-block;
+  width: 0.55em;
+  height: 1em;
+  vertical-align: text-bottom;
+  background: var(--green);
+  opacity: 0.35;
+}
+
+.cw-cursor-on {
+  opacity: 1;
+}
+
+.cw-empty {
+  color: var(--muted);
+}
+
+.digi-clear {
+  padding: 0.3rem 0.6rem;
+  border: 1px solid #0c0d0f;
+  border-radius: 0.35rem;
+  background: #1a1b1e;
+  color: var(--muted);
+  font: inherit;
+  cursor: pointer;
+}

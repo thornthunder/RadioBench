@@ -5,6 +5,7 @@ import {
   type DigiMode,
 } from '@radiobench/protocol';
 import { errorText } from '../../util.ts';
+import { ditMs, keying } from '../cw/morse.ts';
 
 /**
  * Where audio comes from and goes to: the radio's USB sound device, or the simulator.
@@ -177,6 +178,10 @@ const SYMBOL_RATE: Record<DigiMode, number> = { FT8: 6.25, FT4: 12000 / 576 };
 /** Transmissions start this long after their slot, as in WSJT-X. */
 const SLOT_LEAD_S = 0.5;
 const NOISE_AMPLITUDE = 300;
+/** A CW station too, calling over and over at a steady speed. */
+const CW_STATION = { text: 'CQ CQ CQ DE K1ABC K1ABC K', hz: 600, wpm: 22, amplitude: 1500 };
+/** The gap after each call, in dits. */
+const CW_PAUSE_DITS = 14;
 
 interface SimulatedSignal {
   wave: Float32Array;
@@ -186,7 +191,29 @@ interface SimulatedSignal {
   startS: number;
 }
 
-/** A stand-in sound device: FT8 and FT4 signals over noise come in, and what goes out is dropped. */
+/** The CW station's call as one keyed waveform, repeating with the wall clock like the slots. */
+function cwSignal(): SimulatedSignal {
+  const dit = ditMs(CW_STATION.wpm) / 1000;
+  const elements = keying(CW_STATION.text);
+  const seconds = elements.reduce((sum, e) => sum + e.dits * dit, 0) + CW_PAUSE_DITS * dit;
+  const wave = new Float32Array(Math.round(seconds * AUDIO_SAMPLE_RATE));
+  const edge = Math.round(0.005 * AUDIO_SAMPLE_RATE);
+  let at = 0;
+  for (const element of elements) {
+    const length = Math.round(element.dits * dit * AUDIO_SAMPLE_RATE);
+    if (element.on) {
+      for (let i = 0; i < length; i++) {
+        const envelope = Math.min(1, i / edge, (length - i) / edge);
+        wave[at + i] =
+          envelope * Math.sin((2 * Math.PI * CW_STATION.hz * (at + i)) / AUDIO_SAMPLE_RATE);
+      }
+    }
+    at += length;
+  }
+  return { wave, slotMs: seconds * 1000, amplitude: CW_STATION.amplitude, startS: 0 };
+}
+
+/** A stand-in sound device: FT8, FT4 and CW signals over noise come in, and what goes out is dropped. */
 export class SimulatedAudioDevice implements AudioDevice {
   private readFrom = 0;
   private signals: SimulatedSignal[] = [];
@@ -207,6 +234,7 @@ export class SimulatedAudioDevice implements AudioDevice {
         startS: SLOT_LEAD_S + signal.dt,
       }));
     }
+    if (this.signals.length === SIMULATED_SIGNALS.length) this.signals.push(cwSignal());
     // The wall clock, because the signals keep to the UTC slots a decoder cuts; taken after
     // the encoding so that the first read does not deliver a backlog that would shift them.
     this.readFrom = Date.now();

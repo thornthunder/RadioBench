@@ -1,4 +1,9 @@
-import { DIGI_MODES, type DigiMode, type MenuScreen, type SettingKey } from '@radiobench/protocol';
+import {
+  MONITOR_MODES,
+  type MenuScreen,
+  type MonitorMode,
+  type SettingKey,
+} from '@radiobench/protocol';
 import {
   createContext,
   useCallback,
@@ -95,9 +100,9 @@ export interface PanelUi {
   /** Whether this browser wants the FT8/FT4 decodes shown under the radio. */
   decoding: boolean;
   setDecoding(on: boolean): void;
-  /** The digital mode this browser asked the server to decode. */
-  digiMode: DigiMode;
-  setDigiMode(mode: DigiMode): void;
+  /** The mode this browser asked the server to decode: a slot mode, or Morse. */
+  digiMode: MonitorMode;
+  setDigiMode(mode: MonitorMode): void;
   /** The operator's callsign, for picking out decodes meant for them; "" if not given. */
   myCall: string;
   setMyCall(call: string): void;
@@ -120,9 +125,11 @@ export function UiProvider({ children }: { children: ReactNode }) {
   const [talking, setTalking] = useState(false);
   const [micError, setMicError] = useState<string | null>(null);
   const [decoding, setDecodingState] = useState(() => remembered(DECODING_KEY) === 'on');
-  const [digiMode, setDigiModeState] = useState<DigiMode>(() => {
+  const [digiMode, setDigiModeState] = useState<MonitorMode>(() => {
     const kept = remembered(DIGI_MODE_KEY);
-    return (DIGI_MODES as readonly string[]).includes(kept ?? '') ? (kept as DigiMode) : 'FT8';
+    return (MONITOR_MODES as readonly string[]).includes(kept ?? '')
+      ? (kept as MonitorMode)
+      : 'FT8';
   });
   const [myCall, setMyCallState] = useState(() => remembered(MY_CALL_KEY) ?? '');
   const levelTimer = useRef<number | undefined>(undefined);
@@ -136,7 +143,7 @@ export function UiProvider({ children }: { children: ReactNode }) {
     setDecodingState(on);
     remember(DECODING_KEY, on ? 'on' : 'off');
   }, []);
-  const setDigiMode = useCallback((mode: DigiMode) => {
+  const setDigiMode = useCallback((mode: MonitorMode) => {
     setDigiModeState(mode);
     remember(DIGI_MODE_KEY, mode);
   }, []);

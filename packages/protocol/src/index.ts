@@ -153,6 +153,22 @@ export const DIGI_BATCHES_KEPT = 20;
 /** Decoding depth as in WSJT-X: 1 fast, 2 normal, 3 deep. */
 export const DIGI_DEPTHS = [1, 2, 3] as const;
 
+/** Everything the monitor under the radio can decode: the slot modes, and Morse as it comes. */
+export const MONITOR_MODES = [...DIGI_MODES, 'CW'] as const;
+export type MonitorMode = (typeof MONITOR_MODES)[number];
+/** How much decoded Morse the server keeps for clients that join later. */
+export const CW_TEXT_KEPT = 4000;
+
+/** What the Morse decoder is making of the audio. */
+export interface CwState {
+  /** The sender's speed in words per minute; null while no signal is being decoded. */
+  wpm: number | null;
+  /** The tone being decoded, in Hz; null while none has been found. */
+  pitchHz: number | null;
+  /** Whether a keyed tone is there to decode right now. */
+  signal: boolean;
+}
+
 export interface DecoderState {
   /**
    * "off": there is no audio to decode (audio is disabled). "idle": nobody has asked for
@@ -162,7 +178,7 @@ export interface DecoderState {
   status: 'off' | 'idle' | 'running' | 'unavailable';
   /** Why decoding is unavailable, worded for display; null otherwise. */
   detail: string | null;
-  mode: DigiMode;
+  mode: MonitorMode;
   depth: number;
   /** How many threads decode at once. */
   threads: number;
@@ -208,6 +224,8 @@ export type ServerMessage =
   | { type: 'decoder'; decoder: DecoderState }
   // Decodes of one or more slots, oldest first.
   | { type: 'decodes'; batches: DecodeBatch[] }
+  // Decoded Morse: text to add to what was shown (append), or the recent text to start from.
+  | { type: 'cw'; text: string; append: boolean; cw: CwState }
   // A command this client sent could not be carried out.
   | { type: 'error'; message: string };
 
@@ -217,7 +235,7 @@ export type ClientMessage =
   // Start or stop receiving the radio's audio.
   | { type: 'listen'; on: boolean }
   // Start or stop receiving decodes; the mode, when given, is switched for everyone.
-  | { type: 'decode'; on: boolean; mode?: DigiMode }
+  | { type: 'decode'; on: boolean; mode?: MonitorMode }
   | { type: 'menuRead'; ids: string[] }
   // The value is an option's position, a number or text, as the menu item calls for.
   | { type: 'menuSet'; id: string; value: number | string }
@@ -344,8 +362,8 @@ export function parseClientMessage(raw: string): ClientMessage | null {
       const { on, mode } = message;
       if (typeof on !== 'boolean') return null;
       if (mode === undefined) return { type: 'decode', on };
-      return (DIGI_MODES as readonly unknown[]).includes(mode)
-        ? { type: 'decode', on, mode: mode as DigiMode }
+      return (MONITOR_MODES as readonly unknown[]).includes(mode)
+        ? { type: 'decode', on, mode: mode as MonitorMode }
         : null;
     }
     case 'menuRead': {

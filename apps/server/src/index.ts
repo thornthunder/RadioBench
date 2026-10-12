@@ -76,6 +76,8 @@ const decoder = new Decoder(audio, new Ft8tsEngine(config.decodeDepth), {
     return {
       hz: state.mainVfo === 'B' ? state.frequencyB : state.frequencyA,
       mode: state.modeMain,
+      // The Morse decoder sits on the radio's own pitch while the radio is in a CW mode.
+      cwPitchHz: state.modeMain?.startsWith('CW') ? state.keyPitchHz : null,
     };
   },
 });

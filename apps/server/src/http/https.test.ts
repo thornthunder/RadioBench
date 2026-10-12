@@ -28,7 +28,7 @@ beforeAll(async () => {
   const decoder = new Decoder(
     audio,
     { depth: 1, threads: 1, decode: async () => [], close: () => {} },
-    { dial: () => ({ hz: null, mode: null }) },
+    { dial: () => ({ hz: null, mode: null, cwPitchHz: null }) },
   );
   app = await createHttpServer(radio, new Scope(null), audio, decoder, 'no-web-client-here', {
     https: { key: certificate.key, cert: certificate.cert },

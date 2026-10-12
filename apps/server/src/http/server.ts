@@ -80,6 +80,7 @@ export async function createHttpServer(
   decoder.onState((state) => broadcast({ type: 'decoder', decoder: state }));
   // Decodes are small and go to everyone; a client that has not asked ignores them.
   decoder.onBatch((batch) => broadcast({ type: 'decodes', batches: [batch] }));
+  decoder.onCw(({ text, cw }) => broadcast({ type: 'cw', text, append: true, cw }));
   scope.onFrame((frame) => {
     const packet = encodeScopeFrame(frame);
     for (const socket of sockets) sendFresh(socket, packet);
@@ -139,7 +140,11 @@ export async function createHttpServer(
   app.get('/api/state', () => radio.getState());
   app.get('/api/scope', () => scope.getState());
   app.get('/api/audio', () => audio.getState());
-  app.get('/api/decoder', () => ({ ...decoder.getState(), recent: decoder.recent() }));
+  app.get('/api/decoder', () => ({
+    ...decoder.getState(),
+    recent: decoder.recent(),
+    cw: decoder.recentCw(),
+  }));
   if (options.certificate) {
     const certificate = options.certificate;
     app.get('/certificate', (_request, reply) => {
@@ -190,7 +195,11 @@ export async function createHttpServer(
         stopDecoding?.();
         stopDecoding = message.on ? decoder.use() : null;
         // What was decoded before this client asked, so that its list does not start empty.
-        if (message.on) send(socket, { type: 'decodes', batches: decoder.recent() });
+        if (message.on) {
+          send(socket, { type: 'decodes', batches: decoder.recent() });
+          const { text, cw } = decoder.recentCw();
+          send(socket, { type: 'cw', text, append: false, cw });
+        }
         return;
       }
       execute(message).then(

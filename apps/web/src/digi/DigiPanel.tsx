@@ -1,6 +1,7 @@
 import {
-  DIGI_MODES,
   DIGI_SLOT_MS,
+  MONITOR_MODES,
+  type CwState,
   type Decode,
   type DecodeBatch,
   type DigiMode,
@@ -40,8 +41,34 @@ const DIAL_HZ: Record<DigiMode, { band: string; hz: number }[]> = {
   ],
 };
 
-/** Both modes are sent in upper sideband; the radio's data mode keeps the audio path flat. */
+/** Both slot modes are sent in upper sideband; the radio's data mode keeps the audio path flat. */
 const SUITABLE_MODES: RadioState['modeMain'][] = ['DATA-U', 'USB'];
+/** In a CW mode the radio's narrow filter helps, and the decoder follows the radio's pitch. */
+const CW_MODES: RadioState['modeMain'][] = ['CW-U', 'CW-L'];
+
+/** How the Morse decoding is going, in a few words. */
+function describeCw(cw: CwState | undefined): string {
+  if (!cw) return 'Decoding Morse';
+  const pitch = cw.pitchHz !== null ? ` at ${cw.pitchHz} Hz` : '';
+  if (!cw.signal) return `Listening for Morse${pitch}`;
+  return `Decoding Morse${pitch}${cw.wpm !== null ? ` · ${cw.wpm} WPM` : ''}`;
+}
+
+/** The Morse text, with the operator's callsign picked out wherever it occurs. */
+function CwText({ text, myCall }: { text: string; myCall: string }) {
+  if (myCall === '') return <>{text}</>;
+  const parts = text.split(myCall);
+  return (
+    <>
+      {parts.map((part, index) => (
+        <span key={index}>
+          {index > 0 ? <span className="digi-mine">{myCall}</span> : null}
+          {part}
+        </span>
+      ))}
+    </>
+  );
+}
 
 /** 14:30:15 UTC, as WSJT-X labels its slots. */
 function utc(ms: number): string {
@@ -118,11 +145,12 @@ function SlotRows({ batch, myCall }: { batch: DecodeBatch; myCall: string }) {
 }
 
 /**
- * The FT8/FT4 monitor under the radio: what the server decodes from the received audio,
- * slot by slot, so that one can see who is about before starting WSJT-X for real.
+ * The monitor under the radio: what the server decodes from the received audio, slot by
+ * slot for FT8 and FT4 so that one can see who is about before starting WSJT-X for real, or
+ * as it comes for Morse.
  */
 export function DigiPanel() {
-  const { state, decoder, decodes, set } = useRadio();
+  const { state, decoder, decodes, cw, clearCw, set } = useRadio();
   const ui = useUi();
   const scroller = useRef<HTMLDivElement>(null);
   const stuck = useRef(true);
@@ -134,23 +162,27 @@ export function DigiPanel() {
     return () => window.clearInterval(timer);
   }, []);
 
-  const slotMs = DIGI_SLOT_MS[ui.digiMode];
+  const slotMode: DigiMode | null = ui.digiMode === 'CW' ? null : ui.digiMode;
+  const morse = slotMode === null;
+  const slotMs = slotMode ? DIGI_SLOT_MS[slotMode] : null;
   const batches = decodes.filter((batch) => batch.mode === ui.digiMode);
   const running = decoder?.status === 'running' && ui.decoding;
   const dialKey = state ? mainFrequencyKey(state) : 'frequencyA';
   const dialHz = state?.[dialKey] ?? null;
-  const onBand = DIAL_HZ[ui.digiMode].find((entry) => entry.hz === dialHz);
+  const onBand = slotMode ? DIAL_HZ[slotMode].find((entry) => entry.hz === dialHz) : undefined;
+  const suitable = morse ? CW_MODES : SUITABLE_MODES;
   const wrongMode =
-    running && state?.modeMain && !SUITABLE_MODES.includes(state.modeMain) ? state.modeMain : null;
+    running && state?.modeMain && !suitable.includes(state.modeMain) ? state.modeMain : null;
+  const cwText = cw?.text ?? '';
 
   // The list follows the newest decodes unless the reader has scrolled back.
   useLayoutEffect(() => {
     const element = scroller.current;
     if (element && stuck.current) element.scrollTop = element.scrollHeight;
-  }, [batches.length]);
+  }, [batches.length, cwText.length]);
 
   return (
-    <section className="digi" aria-label="FT8 and FT4 monitor">
+    <section className="digi" aria-label="FT8, FT4 and Morse monitor">
       <div className="digi-bar">
         <Key
           className="digi-key"
@@ -167,7 +199,7 @@ export function DigiPanel() {
           DECODE
         </Key>
         <div className="digi-modes" role="radiogroup" aria-label="Mode to decode">
-          {DIGI_MODES.map((mode) => (
+          {MONITOR_MODES.map((mode) => (
             <button
               key={mode}
               type="button"
@@ -179,26 +211,38 @@ export function DigiPanel() {
             </button>
           ))}
         </div>
-        <select
-          className="digi-tune"
-          value={onBand ? onBand.hz : ''}
-          disabled={state?.link !== 'connected'}
-          aria-label={`Tune the radio to a ${ui.digiMode} frequency`}
-          title={`Tunes the radio to the ${ui.digiMode} frequency of a band, in DATA-U`}
-          onChange={(event) => {
-            const hz = Number(event.target.value);
-            if (!hz) return;
-            set('modeMain', 'DATA-U');
-            set(dialKey, hz);
-          }}
-        >
-          <option value="">{onBand ? `${onBand.band} ${ui.digiMode}` : 'Tune to…'}</option>
-          {DIAL_HZ[ui.digiMode].map((entry) => (
-            <option key={entry.hz} value={entry.hz}>
-              {entry.band} · {formatFrequency(entry.hz)}
-            </option>
-          ))}
-        </select>
+        {slotMode ? (
+          <select
+            className="digi-tune"
+            value={onBand ? onBand.hz : ''}
+            disabled={state?.link !== 'connected'}
+            aria-label={`Tune the radio to a ${slotMode} frequency`}
+            title={`Tunes the radio to the ${slotMode} frequency of a band, in DATA-U`}
+            onChange={(event) => {
+              const hz = Number(event.target.value);
+              if (!hz) return;
+              set('modeMain', 'DATA-U');
+              set(dialKey, hz);
+            }}
+          >
+            <option value="">{onBand ? `${onBand.band} ${slotMode}` : 'Tune to…'}</option>
+            {DIAL_HZ[slotMode].map((entry) => (
+              <option key={entry.hz} value={entry.hz}>
+                {entry.band} · {formatFrequency(entry.hz)}
+              </option>
+            ))}
+          </select>
+        ) : (
+          <button
+            type="button"
+            className="digi-clear"
+            disabled={cwText === ''}
+            title="Empties the text in this browser"
+            onClick={clearCw}
+          >
+            Clear
+          </button>
+        )}
         <label className="digi-call">
           My call
           <input
@@ -213,30 +257,55 @@ export function DigiPanel() {
         <span
           className={`digi-status ${decoder?.status === 'unavailable' ? 'digi-status-bad' : ''}`}
         >
-          {ui.decoding
-            ? describe(
-                decoder?.status ?? null,
-                decoder?.detail ?? null,
-                decoder?.threads,
-                decoder?.depth,
-              )
-            : describe(decoder ? 'idle' : null, null, undefined, undefined)}
+          {!ui.decoding
+            ? describe(decoder ? 'idle' : null, null, undefined, undefined)
+            : running && morse
+              ? describeCw(cw?.state)
+              : describe(
+                  decoder?.status ?? null,
+                  decoder?.detail ?? null,
+                  decoder?.threads,
+                  decoder?.depth,
+                )}
         </span>
         <span className="digi-clock" title="UTC, and how far the current slot has got">
           {utc(now)}
-          <span className="digi-slot-bar">
-            <span style={{ width: `${((now % slotMs) / slotMs) * 100}%` }} />
-          </span>
+          {slotMs ? (
+            <span className="digi-slot-bar">
+              <span style={{ width: `${((now % slotMs) / slotMs) * 100}%` }} />
+            </span>
+          ) : null}
         </span>
       </div>
       {wrongMode ? (
         <p className="digi-hint">
-          The radio is on {wrongMode}; {ui.digiMode} is sent in upper sideband (DATA-U or USB).
+          {morse
+            ? `The radio is on ${wrongMode}; in a CW mode its narrow filter helps, and the decoder follows the radio's CW pitch.`
+            : `The radio is on ${wrongMode}; ${ui.digiMode} is sent in upper sideband (DATA-U or USB).`}
         </p>
+      ) : null}
+      {morse ? (
+        <div className="digi-list" ref={scroller}>
+          <pre className="cw-text">
+            {cwText === '' ? (
+              <span className="cw-empty">
+                {running
+                  ? 'Listening. Text appears as it is decoded; the speed and the tone are shown above.'
+                  : 'No Morse decoded yet.'}
+              </span>
+            ) : (
+              <CwText text={cwText} myCall={ui.myCall} />
+            )}
+            {running ? (
+              <span className={`cw-cursor ${cw?.state.signal ? 'cw-cursor-on' : ''}`} />
+            ) : null}
+          </pre>
+        </div>
       ) : null}
       <div
         className="digi-list"
-        ref={scroller}
+        ref={morse ? undefined : scroller}
+        hidden={morse}
         onScroll={(event) => {
           const element = event.currentTarget;
           stuck.current = element.scrollHeight - element.scrollTop - element.clientHeight < 24;
@@ -260,7 +329,7 @@ export function DigiPanel() {
               <tr className="digi-empty">
                 <td colSpan={5}>
                   {running
-                    ? `Listening. ${ui.digiMode} slots end every ${slotMs / 1000} s; the first decodes follow a couple of seconds after the first whole slot.`
+                    ? `Listening. ${ui.digiMode} slots end every ${(slotMs ?? 0) / 1000} s; the first decodes follow a couple of seconds after the first whole slot.`
                     : `No ${ui.digiMode} decodes yet.`}
                 </td>
               </tr>
